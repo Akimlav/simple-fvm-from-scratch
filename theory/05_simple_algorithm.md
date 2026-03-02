@@ -1,3 +1,7 @@
+---
+math: true
+---
+
 ## SIMPLE Algorithm
 
 1. Guess pressure p*

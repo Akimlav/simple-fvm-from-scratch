@@ -1,3 +1,7 @@
+---
+math: true
+---
+
 ## Idea of the Finite Volume Method
 
 We solve equations over a **control volume** and use the Gauss divergence theorem:

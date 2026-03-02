@@ -1,3 +1,7 @@
+---
+math: true
+---
+
 ## Rhie–Chow Interpolation
 
 Naive face velocity interpolation causes checkerboard pressure.

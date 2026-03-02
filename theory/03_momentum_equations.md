@@ -1,3 +1,7 @@
+---
+math: true
+---
+
 ## Discretized Momentum Equations
 
 We integrate Navier–Stokes over each cell.

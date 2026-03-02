@@ -1,3 +1,7 @@
+---
+math: true
+---
+
 ## Velocity Correction
 
 Assume:

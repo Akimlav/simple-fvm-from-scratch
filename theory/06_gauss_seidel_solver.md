@@ -1,3 +1,7 @@
+---
+math: true
+---
+
 ## Gauss–Seidel Linear Solver
 
 We solve:

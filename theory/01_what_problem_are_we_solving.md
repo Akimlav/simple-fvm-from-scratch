@@ -1,3 +1,7 @@
+---
+math: true
+---
+
 ## The Physical Problem
 
 We want to compute the steady 2-D flow of an incompressible Newtonian fluid inside a square cavity where the **top wall moves with constant velocity**.
