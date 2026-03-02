@@ -2,7 +2,6 @@
 
 **A complete, from-scratch 2D incompressible Navier–Stokes solver** built to teach you how SIMPLE and the Finite Volume Method actually work — equation by equation, line by line.
 
-No CFD libraries. No sparse matrices. No black boxes.
 
 ---
 
