@@ -1,76 +1,144 @@
----
-math: true
----
+# 02 — Finite Volume Discretization
 
-## Idea of the Finite Volume Method
+## The Core Idea
 
-We solve equations over a **control volume** and use the Gauss divergence theorem:
+Instead of approximating derivatives at a point (finite differences), FVM
+**integrates the equations over a control volume** and converts volume
+integrals to **surface fluxes**.
 
-$$
-\int_V \nabla \cdot \mathbf{F} dV = \oint_S \mathbf{F}\cdot\mathbf{n} dS
-$$
+For any scalar φ, the divergence theorem says:
 
-Derivatives become fluxes.
+```
+∫_V ∇·(ρ u φ) dV  =  ∮_S ρ u φ · n̂ dS
+```
 
-Control volume neighbors: E, W, N, S.
+This becomes a **sum over faces**:
 
----
+```
+∮_S ρ u φ · n̂ dS  ≈  F_E φ_E  -  F_W φ_W  +  F_N φ_N  -  F_S φ_S
+```
 
-## Diffusion Term
-
-$$
-\nabla \cdot (\Gamma \nabla \phi)
-$$
-
-At east face:
-
-$$
-(\nabla \phi)_e \approx (\phi_E - \phi_P)/\Delta x
-$$
-
-Flux coefficient:
-
-$$
-D_e = \Gamma A_e/\Delta x
-$$
-
-Contribution:
-
-$$
-D_e(\phi_E - \phi_P)
-$$
+where `F` is the mass flux through each face.
 
 ---
 
-## Convection Term
+## The Grid
 
-$$
-\nabla \cdot (\rho \mathbf{u}\phi)
-$$
+We use a **uniform Cartesian collocated grid** with `nx × ny` cells.
+Cell centres are at:
 
-Face mass flux:
+```
+x_i = (i + 0.5) * dx,   i = 0 ... nx-1
+y_j = (j + 0.5) * dy,   j = 0 ... ny-1
+```
 
-$$
-F_e = \rho u_e A_e
-$$
+All variables (u, v, p) are stored **at cell centres**.
 
-Upwind scheme:
+```
+           N (i, j+1)
+           |
+    W ---- P ---- E
+(i-1,j)  (i,j)  (i+1,j)
+           |
+           S (i, j-1)
+```
 
-$$
-\phi_e = \phi_P (F_e>0) \text{ else } \phi_E
-$$
+Face areas (per unit depth in z):
+
+```
+A_EW = dy   (east/west faces, normal in x)
+A_NS = dx   (north/south faces, normal in y)
+```
 
 ---
 
-## Final Algebraic Equation
+## Convective Flux Derivation
 
-$$
-a_P \phi_P = a_E \phi_E + a_W \phi_W + a_N \phi_N + a_S \phi_S + b
-$$
+Starting from the x-momentum convective term:
+
+```
+∫_V ∂(ρ u u)/∂x dV
+```
+
+Apply divergence theorem over control volume (i,j):
+
+```
+= ∫_S ρ u u · n̂_x dS
+≈ (ρ u u)_e * A_e  -  (ρ u u)_w * A_w
+= ρ u_e * u_e * dy  -  ρ u_w * u_w * dy
+```
+
+The **mass flux** through the east face:
+
+```
+F_e = ρ * u_e * dy     [kg/s per unit depth]
+```
+
+So the convective contribution becomes:
+
+```
+F_e * u_e  -  F_w * u_w  +  F_n * v_n  -  F_s * v_s
+```
 
 ---
 
-### Where this appears in the code
+## Diffusive Flux Derivation
 
-- `discretization.py`
-- `linear_solvers.py`
+For the viscous (diffusion) term in x-momentum:
+
+```
+∫_V μ ∂²u/∂x² dV = ∫_S μ ∂u/∂x · n̂ dS
+```
+
+Approximating the gradient at the east face by central difference:
+
+```
+μ (∂u/∂x)_e ≈ μ * (u_E - u_P) / dx
+```
+
+Multiplied by face area `dy`:
+
+```
+Diffusion through east face = μ * dy/dx * (u_E - u_P) = D_E * (u_E - u_P)
+```
+
+where the **diffusion coefficient** is:
+
+```
+D_E = μ * dy / dx
+D_W = μ * dy / dx
+D_N = μ * dx / dy
+D_S = μ * dx / dy
+```
+
+These are **constant** for a uniform grid — computed once before the loop.
+
+---
+
+## Combined: The FVM Equation for One Cell
+
+Summing convection + diffusion for cell (i,j):
+
+```
+[F_e u_e - F_w u_w + F_n u_n - F_s u_s]   ← convection
+- [D_E(u_E - u_P) - D_W(u_P - u_W)
+ + D_N(u_N - u_P) - D_S(u_P - u_S)]       ← diffusion
+= Source terms (pressure gradient)
+```
+
+This is rearranged in Chapter 3 into the standard form:
+
+```
+a_P u_P = a_E u_E + a_W u_W + a_N u_N + a_S u_S + b
+```
+
+---
+
+## Where This Appears in the Code
+
+| Concept | File | Variable |
+|---|---|---|
+| Grid spacing dx, dy | `solver/grid.py` | `grid.dx`, `grid.dy` |
+| Face areas, D_E etc | `solver/discretization.py` | `D_E, D_W, D_N, D_S` |
+| Mass fluxes F_e, F_w | `solver/momentum.py` | `Fu_E, Fu_W, Fu_N, Fu_S` |
+| Convection coefficients | `solver/discretization.py` | `conv_coeffs()` |

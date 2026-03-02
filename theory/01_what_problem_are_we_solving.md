@@ -1,70 +1,88 @@
----
-math: true
----
+# 01 — What Problem Are We Solving?
 
-## The Physical Problem
+## The Physical Setup
 
-We want to compute the steady 2-D flow of an incompressible Newtonian fluid inside a square cavity where the **top wall moves with constant velocity**.
+We solve for **steady incompressible viscous flow** inside a unit square cavity.
 
-This is the classical **lid-driven cavity** benchmark.
+```
+y
+^
+1 ──────────────────── u = U_lid = 1,  v = 0   ← moving lid
+|                    |
+|    FLUID DOMAIN    |  u = v = 0 on left/right walls
+|                    |
+0 ──────────────────── u = v = 0                ← stationary floor
+0                    1  → x
+```
 
-Because it contains *all* CFD difficulties simultaneously:
-
-- pressure–velocity coupling
-- wall boundary layers
-- recirculation
-- elliptic pressure equation
-- no analytical solution
+The lid motion drives a **recirculating vortex** inside the cavity. At low
+Reynolds numbers the flow is steady and laminar — ideal for testing a solver.
 
 ---
 
 ## Governing Equations
 
-We solve the **steady incompressible Navier–Stokes equations**.
+We solve the **incompressible Navier–Stokes equations** in steady form.
 
-### Continuity (mass conservation)
+### Continuity (conservation of mass)
 
-$$
-\nabla \cdot \mathbf{u} = 0
-$$
+For an incompressible fluid (ρ = const), mass conservation reduces to:
 
-In 2D:
+```
+∂u/∂x  +  ∂v/∂y  =  0
+```
 
-$$
-\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} = 0
-$$
+This says: whatever fluid enters a volume must leave it — no accumulation.
 
-Pressure has no evolution equation.
+### x-Momentum (Newton's second law in x)
 
----
+```
+ρ( u ∂u/∂x + v ∂u/∂y ) = -∂p/∂x + μ( ∂²u/∂x² + ∂²u/∂y² )
+```
 
-### Momentum Equations
+Left side:  inertia (convection of momentum)  
+Right side: pressure force + viscous diffusion
 
-**x-momentum**
+### y-Momentum
 
-$$
-\rho u \frac{\partial u}{\partial x} + \rho v \frac{\partial u}{\partial y} = -\frac{\partial p}{\partial x} + \mu \frac{\partial^2 u}{\partial x^2} + \mu \frac{\partial^2 u}{\partial y^2}
-$$
-
-**y-momentum**
-
-$$
-\rho u \frac{\partial v}{\partial x} + \rho v \frac{\partial v}{\partial y} = -\frac{\partial p}{\partial y} + \mu \frac{\partial^2 v}{\partial x^2} + \mu \frac{\partial^2 v}{\partial y^2}
-$$
-## Why Pressure Is Difficult
-
-Momentum needs pressure. Continuity does not compute pressure.
-
-Pressure acts as a **Lagrange multiplier** enforcing
-
-$$
-\nabla \cdot \mathbf{u} = 0
-$$
+```
+ρ( u ∂v/∂x + v ∂v/∂y ) = -∂p/∂y + μ( ∂²v/∂x² + ∂²v/∂y² )
+```
 
 ---
 
-### Where this appears in the code
+## Non-Dimensional Parameter: Reynolds Number
 
-- `momentum.py`
-- `pressure.py`
-- `simple.py`
+```
+Re = ρ U L / μ = U L / ν
+```
+
+With U = 1 m/s, L = 1 m, ν = 0.01 m²/s → **Re = 100**.
+
+Low Re means viscosity dominates. The flow has a smooth primary vortex and
+two small corner vortices. This is our validation case against Ghia et al. (1982).
+
+---
+
+## Why is This Hard to Solve?
+
+Three unknowns: u, v, p.  
+Three equations: continuity + 2 momentum.
+
+**The coupling problem**: pressure appears in momentum but there is no
+explicit equation for pressure. Continuity gives a constraint on velocity,
+not a direct equation for p.
+
+This is the pressure–velocity coupling problem. The SIMPLE algorithm (Chapter 5)
+resolves it by deriving a pressure equation from continuity.
+
+---
+
+## Where This Appears in the Code
+
+| Concept | File | Function/Variable |
+|---|---|---|
+| Domain size, Re | `solver/grid.py` | `L`, `nu`, `Re` |
+| u, v, p arrays | `solver/fields.py` | `Fields` class |
+| Governing equations | `solver/momentum.py` | `solve_u_star`, `solve_v_star` |
+| Continuity residual | `solver/rhie_chow.py` | `compute_mass_imbalance` |
