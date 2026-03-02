@@ -39,36 +39,28 @@ Pressure has no evolution equation.
 **x-momentum**
 
 $$
-\begin{aligned}
-\rho \Big(
-u \frac{\partial u}{\partial x}
-+ v \frac{\partial u}{\partial y}
-\Big)
-&= -\frac{\partial p}{\partial x} \\
-&\quad + \mu \Big(
-\frac{\partial^2 u}{\partial x^2}
-+ \frac{\partial^2 u}{\partial y^2}
-\Big)
-\end{aligned}
+\rho u \frac{\partial u}{\partial x}
++ \rho v \frac{\partial u}{\partial y}
+=
+-\frac{\partial p}{\partial x}
++
+\mu \frac{\partial^2 u}{\partial x^2}
++
+\mu \frac{\partial^2 u}{\partial y^2}
 $$
 
 **y-momentum**
 
 $$
-\begin{aligned}
-\rho \Big(
-u \frac{\partial v}{\partial x}
-+ v \frac{\partial v}{\partial y}
-\Big)
-&= -\frac{\partial p}{\partial y} \\
-&\quad + \mu \Big(
-\frac{\partial^2 v}{\partial x^2}
-+ \frac{\partial^2 v}{\partial y^2}
-\Big)
-\end{aligned}
+\rho u \frac{\partial v}{\partial x}
++ \rho v \frac{\partial v}{\partial y}
+=
+-\frac{\partial p}{\partial y}
++
+\mu \frac{\partial^2 v}{\partial x^2}
++
+\mu \frac{\partial^2 v}{\partial y^2}
 $$
-
----
 
 ## Why Pressure Is Difficult
 
