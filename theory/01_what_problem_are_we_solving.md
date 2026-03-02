@@ -39,29 +39,33 @@ Pressure has no evolution equation.
 **x-momentum**
 
 $$
-\rho \left( u \frac{\partial u}{\partial x} + v \frac{\partial u}{\partial y} \right)
-=
--\frac{\partial p}{\partial x}
-+
-\mu \left(
+\begin{aligned}
+\rho \Big(
+u \frac{\partial u}{\partial x}
++ v \frac{\partial u}{\partial y}
+\Big)
+&= -\frac{\partial p}{\partial x} \\
+&\quad + \mu \Big(
 \frac{\partial^2 u}{\partial x^2}
-+
-\frac{\partial^2 u}{\partial y^2}
-\right)
++ \frac{\partial^2 u}{\partial y^2}
+\Big)
+\end{aligned}
 $$
 
 **y-momentum**
 
 $$
-\rho \left( u \frac{\partial v}{\partial x} + v \frac{\partial v}{\partial y} \right)
-=
--\frac{\partial p}{\partial y}
-+
-\mu \left(
+\begin{aligned}
+\rho \Big(
+u \frac{\partial v}{\partial x}
++ v \frac{\partial v}{\partial y}
+\Big)
+&= -\frac{\partial p}{\partial y} \\
+&\quad + \mu \Big(
 \frac{\partial^2 v}{\partial x^2}
-+
-\frac{\partial^2 v}{\partial y^2}
-\right)
++ \frac{\partial^2 v}{\partial y^2}
+\Big)
+\end{aligned}
 $$
 
 ---
