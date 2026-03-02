@@ -20,11 +20,15 @@ We solve the **steady incompressible Navier–Stokes equations**.
 
 ### Continuity (mass conservation)
 
-\[\nabla \cdot \mathbf{u} = 0\]
+$$
+\nabla \cdot \mathbf{u} = 0
+$$
 
 In 2D:
 
-\[\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} = 0\]
+$$
+\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} = 0
+$$
 
 Pressure has no evolution equation.
 
@@ -32,15 +36,33 @@ Pressure has no evolution equation.
 
 ### Momentum Equations
 
-x-momentum:
+**x-momentum**
 
-\[\rho(u\frac{\partial u}{\partial x} + v\frac{\partial u}{\partial y}) =
--\frac{\partial p}{\partial x} + \mu(\frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2})\]
+$$
+\rho \left( u \frac{\partial u}{\partial x} + v \frac{\partial u}{\partial y} \right)
+=
+-\frac{\partial p}{\partial x}
++
+\mu \left(
+\frac{\partial^2 u}{\partial x^2}
++
+\frac{\partial^2 u}{\partial y^2}
+\right)
+$$
 
-y-momentum:
+**y-momentum**
 
-\[\rho(u\frac{\partial v}{\partial x} + v\frac{\partial v}{\partial y}) =
--\frac{\partial p}{\partial y} + \mu(\frac{\partial^2 v}{\partial x^2} + \frac{\partial^2 v}{\partial y^2})\]
+$$
+\rho \left( u \frac{\partial v}{\partial x} + v \frac{\partial v}{\partial y} \right)
+=
+-\frac{\partial p}{\partial y}
++
+\mu \left(
+\frac{\partial^2 v}{\partial x^2}
++
+\frac{\partial^2 v}{\partial y^2}
+\right)
+$$
 
 ---
 
@@ -48,8 +70,11 @@ y-momentum:
 
 Momentum needs pressure. Continuity does not compute pressure.
 
-Pressure acts as a **Lagrange multiplier** enforcing:
-\[\nabla \cdot \mathbf{u} = 0\]
+Pressure acts as a **Lagrange multiplier** enforcing
+
+$$
+\nabla \cdot \mathbf{u} = 0
+$$
 
 ---
 
