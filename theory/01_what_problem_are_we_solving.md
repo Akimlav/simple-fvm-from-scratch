@@ -41,12 +41,9 @@ Pressure has no evolution equation.
 $$
 \rho u \frac{\partial u}{\partial x}
 + \rho v \frac{\partial u}{\partial y}
-=
--\frac{\partial p}{\partial x}
-+
-\mu \frac{\partial^2 u}{\partial x^2}
-+
-\mu \frac{\partial^2 u}{\partial y^2}
+= -\frac{\partial p}{\partial x}
++ \mu \frac{\partial^2 u}{\partial x^2}
++ \mu \frac{\partial^2 u}{\partial y^2}
 $$
 
 **y-momentum**
@@ -54,14 +51,10 @@ $$
 $$
 \rho u \frac{\partial v}{\partial x}
 + \rho v \frac{\partial v}{\partial y}
-=
--\frac{\partial p}{\partial y}
-+
-\mu \frac{\partial^2 v}{\partial x^2}
-+
-\mu \frac{\partial^2 v}{\partial y^2}
+= -\frac{\partial p}{\partial y}
++ \mu \frac{\partial^2 v}{\partial x^2}
++ \mu \frac{\partial^2 v}{\partial y^2}
 $$
-
 ## Why Pressure Is Difficult
 
 Momentum needs pressure. Continuity does not compute pressure.
