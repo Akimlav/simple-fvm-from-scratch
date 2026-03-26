@@ -27,12 +27,7 @@ where the coefficients are:
   a_S'[i,j] = ρ dx² * 0.5 * (1/a_P[i,j-1] + 1/a_P[i,j])
   a_P'[i,j] = a_E' + a_W' + a_N' + a_S'
 
-CONSISTENCY WITH RHIE-CHOW
----------------------------
-These coefficients are IDENTICAL to the Rhie-Chow correction factors in
-rhie_chow.py. This is not a coincidence — it ensures that the p' correction
-drives bP to exactly zero. If they were inconsistent, the solver would
-oscillate without converging.
+The Gauss-Seidel inner loop is handled by linear_solvers.gauss_seidel().
 
 PRESSURE REFERENCE
 ------------------
@@ -45,6 +40,7 @@ import numpy as np
 from solver.grid import Grid
 from solver.fields import Fields
 from solver.boundary_conditions import apply_pressure_neumann_bcs
+from solver.linear_solvers import gauss_seidel
 
 
 def build_pressure_correction_coeffs(fields: Fields, grid: Grid,
@@ -81,34 +77,26 @@ def build_pressure_correction_coeffs(fields: Fields, grid: Grid,
     for i in range(1, nx - 1):
         for j in range(1, ny - 1):
 
-            # East face contribution:
             # a_E' = ρ * dy² * 0.5 * (1/aP[i,j] + 1/aP[i+1,j])
-            # This comes from: F_e_corrected = F_e* - ρ*dy * D_f_e * (p'_E - p'_P)
-            # and D_f_e = 0.5*dy*(1/aP[i] + 1/aP[i+1])
-            # So the p' coefficient = ρ * dy * D_f_e = ρ * dy² * 0.5 * (...)
             aE_p[i, j] = (rho * dy**2 * 0.5
                           * (1.0 / (au_P_arr[i,   j] + 1e-20)
                            + 1.0 / (au_P_arr[i+1, j] + 1e-20)))
 
-            # West face contribution:
             # a_W' = ρ * dy² * 0.5 * (1/aP[i-1,j] + 1/aP[i,j])
             aW_p[i, j] = (rho * dy**2 * 0.5
                           * (1.0 / (au_P_arr[i-1, j] + 1e-20)
                            + 1.0 / (au_P_arr[i,   j] + 1e-20)))
 
-            # North face contribution:
             # a_N' = ρ * dx² * 0.5 * (1/aP[i,j] + 1/aP[i,j+1])
             aN_p[i, j] = (rho * dx**2 * 0.5
                           * (1.0 / (av_P_arr[i, j]   + 1e-20)
                            + 1.0 / (av_P_arr[i, j+1] + 1e-20)))
 
-            # South face contribution:
             # a_S' = ρ * dx² * 0.5 * (1/aP[i,j-1] + 1/aP[i,j])
             aS_p[i, j] = (rho * dx**2 * 0.5
                           * (1.0 / (av_P_arr[i, j-1] + 1e-20)
                            + 1.0 / (av_P_arr[i, j]   + 1e-20)))
 
-            # Central coefficient = sum of neighbours (no source term in a_P)
             aP_p[i, j] = aE_p[i, j] + aW_p[i, j] + aN_p[i, j] + aS_p[i, j] + 1e-20
 
     return aE_p, aW_p, aN_p, aS_p, aP_p
@@ -125,46 +113,38 @@ def solve_pressure_correction(fields: Fields, grid: Grid,
     Equation: a_P' p'_P = a_E' p'_E + a_W' p'_W + a_N' p'_N + a_S' p'_S - bP
 
     Note the sign convention: bP is on the RHS with a MINUS sign.
-    This is because bP represents mass IN excess — the positive mass
-    imbalance is removed by a positive p' that compresses the flow.
+    This is because bP is the mass IN excess — a positive mass imbalance
+    requires a positive p' to slow the flow down and satisfy continuity.
 
-    Boundary condition: Neumann dp'/dn = 0 on all walls.
-    Applied by copying nearest interior value to boundary after each sweep.
+    The p' equation has the same algebraic structure as the momentum equations
+    (a_P φ_P = Σ a_nb φ_nb + source), so we use the same Gauss-Seidel solver.
+    Here the "source" term is -bP.
+
+    Boundary condition: Neumann dp'/dn = 0 on all walls, applied by copying
+    the first interior value to the boundary after each sweep.
 
     Pressure reference: subtract mean(p') after solving to pin the level.
 
     Parameters
     ----------
-    fields   : Fields (reads bP; writes p_prime in-place)
-    grid     : Grid
-    aE_p ... aP_p : p' equation coefficients from build_pressure_correction_coeffs
+    fields    : Fields (reads bP; writes p_prime in-place)
+    grid      : Grid
+    aE_p..aP_p: p' equation coefficients from build_pressure_correction_coeffs
     gs_sweeps : number of Gauss-Seidel sweeps
     """
-    nx, ny   = grid.nx, grid.ny
-    p_prime  = fields.p_prime   # modified in-place
-    bP       = fields.bP
+    # The source term for p' is -bP (see sign convention above)
+    b_p = -fields.bP
 
-    for _ in range(gs_sweeps):
-        for i in range(1, nx - 1):
-            for j in range(1, ny - 1):
-                # Gauss-Seidel update for p':
-                #   p'_P = (a_E' p'_E + a_W' p'_W + a_N' p'_N + a_S' p'_S - bP) / a_P'
-                # The -bP comes from the sign convention above.
-                p_prime[i, j] = (
-                    aE_p[i, j] * p_prime[i+1, j]
-                  + aW_p[i, j] * p_prime[i-1, j]
-                  + aN_p[i, j] * p_prime[i,  j+1]
-                  + aS_p[i, j] * p_prime[i,  j-1]
-                  - bP[i, j]               # ← RHS: mass imbalance
-                ) / aP_p[i, j]
+    # Gauss-Seidel solve (same function used for momentum equations)
+    gauss_seidel(fields.p_prime, aP_p, aE_p, aW_p, aN_p, aS_p,
+                 b_p, n_sweeps=gs_sweeps)
 
-        # Neumann BCs for p': dp'/dn = 0 at all walls
-        apply_pressure_neumann_bcs(p_prime)
+    # Neumann BCs for p': dp'/dn = 0 at all walls
+    apply_pressure_neumann_bcs(fields.p_prime)
 
     # Fix pressure reference level: subtract mean so pressure stays near 0
     # Required because the p' equation with pure Neumann BCs is singular
-    # (solution unique only up to an additive constant)
-    p_prime -= np.mean(p_prime)
+    fields.p_prime -= np.mean(fields.p_prime)
 
 
 def correct_pressure(fields: Fields, urf_p: float) -> None:

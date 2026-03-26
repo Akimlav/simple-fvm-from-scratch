@@ -1,5 +1,21 @@
 # 05 — The SIMPLE Algorithm
 
+## The Big Picture (Plain English)
+
+Before the maths: here is what SIMPLE actually does in one sentence.
+
+**You guess the pressure, use it to compute velocities, check how much mass
+is being created or destroyed in each cell, then adjust the pressure to fix
+it. Repeat until mass is conserved everywhere.**
+
+That's it. The rest of this chapter is just making that loop precise.
+
+The key insight is that you don't need to solve for pressure and velocity
+simultaneously. You can alternate: fix pressure → solve velocity → fix pressure
+→ solve velocity → ... and this iteration converges to the correct answer.
+
+---
+
 ## Why We Need SIMPLE
 
 After discretization we have:
@@ -18,15 +34,19 @@ We know neither. SIMPLE breaks this circular dependency iteratively.
 Initialize: u = v = 0,  p = 0
 
 LOOP until convergence:
-  Step 1: Solve u-momentum  →  u*   (using current p)
-  Step 2: Solve v-momentum  →  v*   (using current p)
-  Step 3: Compute mass imbalance using Rhie-Chow face velocities
+  Step 1: Solve u-momentum  →  u*   (using current p, which may be wrong)
+  Step 2: Solve v-momentum  →  v*   (using current p, which may be wrong)
+  Step 3: Compute mass imbalance bP using Rhie-Chow face velocities
   Step 4: Solve pressure-correction equation  →  p'
   Step 5: Correct pressure:   p  ← p + α_p * p'
-  Step 6: Correct velocities: u  ← u* + correction
-                               v  ← v* + correction
+  Step 6: Correct velocities: u  ← u* + correction from p'
+                               v  ← v* + correction from p'
   Check: max|bP| < tolerance?  → STOP
 ```
+
+u* and v* are called "predicted" velocities — they satisfy momentum but NOT
+continuity. Steps 4–6 fix that. bP (the mass imbalance) is the measure of
+how wrong the velocities currently are.
 
 ---
 
@@ -52,6 +72,8 @@ bP[i,j] = ρ(u_e - u_w)*dy + ρ(v_n - v_s)*dx
 ```
 
 This is the continuity residual. At convergence bP → 0 everywhere.
+The sign convention: positive bP means MORE mass is entering the cell than
+leaving — continuity is violated, pressure needs to increase there.
 
 ---
 
@@ -79,32 +101,18 @@ u'_P = -(dy / a_P) * (p'_E - p'_P)
 
 We define:
 ```
-d_u = dy / a_P     [m²·s/kg]
+d_u = dy / a_P     [velocity sensitivity to pressure change]
 ```
 
 So:
 ```
 u = u* - d_u * (p'_E - p'_P)
-```
-
-For v:
-```
-d_v = dx / a_P
-v = v* - d_v * (p'_N - p'_P)
+v = v* - d_v * (p'_N - p'_P),   where d_v = dx / a_P
 ```
 
 **Building the p' equation:**
 
-Substitute the corrected face velocities into continuity:
-
-```
-ρ [u*_e - d_u_e(p'_E - p'_P)] dy
-- ρ [u*_w - d_u_w(p'_P - p'_W)] dy
-+ ρ [v*_n - d_v_n(p'_N - p'_P)] dx
-- ρ [v*_s - d_v_s(p'_P - p'_S)] dx = 0
-```
-
-Collecting p' terms on left, u*/v* terms (= -bP) on right:
+Substitute the corrected face velocities into continuity and collect p' terms:
 
 ```
 a_E' p'_E + a_W' p'_W + a_N' p'_N + a_S' p'_S - a_P' p'_P = bP
@@ -120,6 +128,8 @@ a_P' = a_E' + a_W' + a_N' + a_S'
 ```
 
 This is a **Poisson equation** for p'. It is solved by Gauss-Seidel (Chapter 6).
+The source term bP on the right-hand side is what "drives" the correction —
+larger mass imbalance means a larger pressure correction is needed.
 
 ---
 
@@ -142,19 +152,20 @@ v[i,j] = v*[i,j] - (dx / av_P_arr[i,j]) * (p'[i,j+1] - p'[i,j])
 ```
 
 Note: **compact gradient** (adjacent cells), NOT the wide stencil used in momentum.
-This is consistent with the Rhie-Chow interpolation — consistency is critical.
+This is consistent with Rhie-Chow — consistency is critical for convergence.
 
 ---
 
 ## Under-Relaxation Summary
 
-| Variable | Factor | Typical Value |
-|---|---|---|
-| u, v (momentum) | α_u, α_v | 0.3 – 0.7 |
-| p (pressure) | α_p | 0.1 – 0.3 |
+| Variable | Factor | Typical value | Effect of reducing |
+|---|---|---|---|
+| u, v (momentum) | α_u, α_v | 0.3–0.7 | More stable, slower |
+| p (pressure) | α_p | 0.1–0.3 | More stable, slower |
 
-Without under-relaxation, SIMPLE diverges. The factors slow the update,
-preventing large oscillations from one iteration to the next.
+Without under-relaxation, SIMPLE diverges for almost all problems. The factors
+slow down the update, preventing large oscillations between iterations.
+A rule of thumb: `α_u + α_p ≈ 1` (Patankar's suggestion).
 
 ---
 

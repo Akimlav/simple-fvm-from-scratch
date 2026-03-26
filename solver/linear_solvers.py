@@ -18,8 +18,13 @@ Rearranged to isolate φ_P:
 Gauss-Seidel applies this update in-place: cells already updated in the
 current sweep are used immediately (unlike Jacobi which uses all old values).
 
-This function is used for BOTH the momentum equations (φ = u or v)
-AND the pressure-correction equation (φ = p').
+WHERE THIS IS CALLED
+---------------------
+  solver/momentum.py  → solve_u_star(), solve_v_star()
+  solver/pressure.py  → solve_pressure_correction()
+
+Both use the same gauss_seidel() function — the momentum and pressure
+equations have the same algebraic structure, just different coefficients.
 """
 
 import numpy as np
@@ -42,8 +47,8 @@ def gauss_seidel(phi: np.ndarray,
                +  aN[i,j]*phi[i,j+1] + aS[i,j]*phi[i,j-1]
                +  b[i,j]) / aP[i,j]
 
-    Sweep order: i = 1..nx-2, j = 1..ny-2  (interior cells only)
-    Boundary cells (i=0, i=nx-1, j=0, j=ny-1) are set by BC functions,
+    Sweep order: i = 1..nx-2, j = 1..ny-2  (interior nodes only)
+    Boundary nodes (i=0, i=nx-1, j=0, j=ny-1) are set by BC functions,
     NOT updated here.
 
     Parameters
@@ -57,32 +62,19 @@ def gauss_seidel(phi: np.ndarray,
     Returns
     -------
     phi : 2D array (same array, modified in-place, also returned for convenience)
-
-    Notes
-    -----
-    - No matrix is ever assembled. The stencil is applied cell by cell.
-    - Convergence requires diagonal dominance: |a_P| >= sum|a_nb|
-      This is guaranteed by how a_P is constructed in discretization.py.
-    - phi is updated in-place. When computing phi[i,j], the values
-      phi[i-1,j] and phi[i,j-1] are already from THIS sweep (new values),
-      while phi[i+1,j] and phi[i,j+1] are still from the PREVIOUS sweep.
     """
     nx, ny = phi.shape
 
     for _ in range(n_sweeps):
-        for i in range(1, nx - 1):      # interior cells only
-            for j in range(1, ny - 1):  # boundary cells handled by BCs
-
-                # Gauss-Seidel update:
-                # Numerator = weighted sum of neighbours + source
-                # Denominator = central coefficient
+        for i in range(1, nx - 1):
+            for j in range(1, ny - 1):
                 phi[i, j] = (
-                    aE[i, j] * phi[i+1, j]   # east neighbour  (old value)
+                    aE[i, j] * phi[i+1, j]   # east neighbour  (old value this sweep)
                   + aW[i, j] * phi[i-1, j]   # west neighbour  (new value — already updated)
-                  + aN[i, j] * phi[i,  j+1]  # north neighbour (old value)
+                  + aN[i, j] * phi[i,  j+1]  # north neighbour (old value this sweep)
                   + aS[i, j] * phi[i,  j-1]  # south neighbour (new value — already updated)
-                  + b[i, j]                  # source term
-                ) / aP[i, j]                 # central coefficient (divide to isolate phi_P)
+                  + b[i, j]
+                ) / aP[i, j]
 
     return phi
 
@@ -100,16 +92,8 @@ def compute_residual(phi: np.ndarray,
     Residual at cell (i,j):
       r[i,j] = |a_P φ_P - a_E φ_E - a_W φ_W - a_N φ_N - a_S φ_S - b|
 
-    Returns the maximum residual over all interior cells.
+    Returns the maximum residual over all interior nodes.
     A small residual means the linear system is nearly satisfied.
-
-    Parameters
-    ----------
-    Same as gauss_seidel.
-
-    Returns
-    -------
-    float : maximum residual
     """
     nx, ny = phi.shape
     max_res = 0.0

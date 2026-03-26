@@ -61,7 +61,7 @@ The key insight: the momentum equation tells us how to turn a pressure gradient 
 
 ## What is Rhie–Chow?
 
-On a collocated grid (u, v, p all at cell centres), naive interpolation of velocities to faces lets a **checkerboard pressure field** satisfy continuity exactly — a purely numerical artefact. Rhie–Chow interpolation adds a compact pressure-gradient term to the face velocity that eliminates this decoupling without moving to a staggered grid.
+On a collocated grid (u, v, p all at the same locations), naive interpolation of velocities to faces lets a **checkerboard pressure field** satisfy continuity exactly — a purely numerical artefact. Rhie–Chow interpolation adds a compact pressure-gradient term to the face velocity that eliminates this decoupling without moving to a staggered grid.
 
 ---
 
@@ -88,7 +88,7 @@ simple-fvm-from-scratch/
 │   ├── grid.py                ← mesh geometry
 │   ├── fields.py              ← field initialisation
 │   ├── discretization.py      ← FVM coefficient assembly
-│   ├── linear_solvers.py      ← Gauss–Seidel
+│   ├── linear_solvers.py      ← Gauss–Seidel (used by momentum.py and pressure.py)
 │   ├── momentum.py            ← u* and v* prediction
 │   ├── pressure.py            ← pressure-correction equation
 │   ├── rhie_chow.py           ← face velocity interpolation
@@ -127,7 +127,23 @@ Iteration 100 | mass residual: 6.710e-04
 Iteration 500 | mass residual: 2.183e-06
 ```
 
-The continuity residual should decrease monotonically. At Re = 100 with a 41×41 grid and 500 SIMPLE iterations, the centreline profiles match Ghia et al. within a few percent.
+The continuity residual should decrease overall, though **early iterations
+may be non-monotonic** — while the pressure field is still developing from
+zero, bP can temporarily increase before settling into a steady decrease.
+This is normal. At Re = 100 with a 41×41 grid and 500 SIMPLE iterations,
+the centreline profiles match Ghia et al. within a few percent.
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| bP diverges to infinity | Under-relaxation too aggressive | Reduce `urf_u`, `urf_v` to 0.3 |
+| Slow convergence, barely decreasing | Not enough inner sweeps | Increase `gs_p` to 50 |
+| Checkerboard pattern in pressure plot | Bug in Rhie-Chow or `au_P_arr` | Check `au_P_arr` is not all-ones (initialisation bug) |
+| Primary vortex not forming | Lid BC not applied to `u_star` | Check `apply_velocity_bcs` is called after each G-S sweep in momentum |
+| Centreline profiles shifted from Ghia | Grid too coarse | Increase to 61×61 or 81×81 |
 
 ---
 
@@ -157,18 +173,17 @@ nu = 1e-3    # Re = 1000 (needs finer grid, ~61x61)
 
 ## Reading Order
 
-If you want to understand every line of code, read:
+Read the theory files in this order, then open `run_simulation.py` and follow
+the code — every step references the theory files.
 
-1. `theory/01_what_problem_are_we_solving.md`
-2. `theory/02_finite_volume_discretization.md`
-3. `theory/03_momentum_equations.md`
-4. `theory/06_gauss_seidel_solver.md`
-5. `theory/04_pressure_velocity_coupling.md`
-6. `theory/05_simple_algorithm.md`
-7. `theory/07_rhie_chow_interpolation.md`
-8. `theory/08_lid_driven_cavity_setup.md`
-
-Then open `run_simulation.py` and follow the code — every step references the theory files.
+1. `theory/01_what_problem_are_we_solving.md` — physics and governing equations
+2. `theory/02_finite_volume_discretization.md` — how PDEs become algebraic equations
+3. `theory/03_momentum_equations.md` — assembling the u and v equations
+4. `theory/04_pressure_velocity_coupling.md` — why pressure is hard, the checkerboard problem
+5. `theory/05_simple_algorithm.md` — the full SIMPLE loop
+6. `theory/06_gauss_seidel_solver.md` — the linear solver used inside SIMPLE
+7. `theory/07_rhie_chow_interpolation.md` — fixing the checkerboard in continuity
+8. `theory/08_lid_driven_cavity_setup.md` — boundary conditions and problem setup
 
 ---
 

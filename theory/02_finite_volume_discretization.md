@@ -24,15 +24,26 @@ where `F` is the mass flux through each face.
 
 ## The Grid
 
-We use a **uniform Cartesian collocated grid** with `nx × ny` cells.
-Cell centres are at:
+We use a **uniform Cartesian collocated grid** with `nx × ny` nodes.
+All variables (u, v, p) are stored **at the same grid points** (collocated).
+
+The grid is **node-based**: nodes include the physical boundaries.
 
 ```
-x_i = (i + 0.5) * dx,   i = 0 ... nx-1
-y_j = (j + 0.5) * dy,   j = 0 ... ny-1
+x[i] = i * dx,   i = 0 ... nx-1
+y[j] = j * dy,   j = 0 ... ny-1
 ```
 
-All variables (u, v, p) are stored **at cell centres**.
+So `x[0] = 0` and `x[nx-1] = L` — the first and last points sit exactly on
+the walls. Interior nodes where the equations are solved run `i = 1..nx-2`.
+
+A worked example: for `nx = 5`, `L = 1.0`, `dx = 0.25`:
+```
+x[0]=0.0  x[1]=0.25  x[2]=0.5  x[3]=0.75  x[4]=1.0
+ wall      interior                          wall
+```
+
+Each interior node P connects to its four neighbours E, W, N, S:
 
 ```
            N (i, j+1)
@@ -71,13 +82,18 @@ Apply divergence theorem over control volume (i,j):
 The **mass flux** through the east face:
 
 ```
-F_e = ρ * u_e * dy     [kg/s per unit depth]
+F_E = ρ * u_e * dy     [kg/s per unit depth]
 ```
 
 So the convective contribution becomes:
 
 ```
-F_e * u_e  -  F_w * u_w  +  F_n * v_n  -  F_s * v_s
+F_E * u_e  -  F_W * u_w  +  F_N * v_n  -  F_S * v_s
+```
+
+A concrete example with `ρ=1`, `dy=0.25`, `u_e=0.5`:
+```
+F_E = 1.0 * 0.5 * 0.25 = 0.125 kg/s
 ```
 
 ---
@@ -113,14 +129,19 @@ D_S = μ * dx / dy
 
 These are **constant** for a uniform grid — computed once before the loop.
 
+A concrete example with `μ=0.01`, `dx=dy=0.25`:
+```
+D_E = 0.01 * 0.25 / 0.25 = 0.01
+```
+
 ---
 
-## Combined: The FVM Equation for One Cell
+## Combined: The FVM Equation for One Node
 
-Summing convection + diffusion for cell (i,j):
+Summing convection + diffusion for node (i,j):
 
 ```
-[F_e u_e - F_w u_w + F_n u_n - F_s u_s]   ← convection
+[F_E u_e - F_W u_w + F_N u_n - F_S u_s]   ← convection
 - [D_E(u_E - u_P) - D_W(u_P - u_W)
  + D_N(u_N - u_P) - D_S(u_P - u_S)]       ← diffusion
 = Source terms (pressure gradient)
@@ -139,6 +160,7 @@ a_P u_P = a_E u_E + a_W u_W + a_N u_N + a_S u_S + b
 | Concept | File | Variable |
 |---|---|---|
 | Grid spacing dx, dy | `solver/grid.py` | `grid.dx`, `grid.dy` |
+| Node coordinates | `solver/grid.py` | `grid.x`, `grid.y` |
 | Face areas, D_E etc | `solver/discretization.py` | `D_E, D_W, D_N, D_S` |
-| Mass fluxes F_e, F_w | `solver/momentum.py` | `Fu_E, Fu_W, Fu_N, Fu_S` |
-| Convection coefficients | `solver/discretization.py` | `conv_coeffs()` |
+| Mass fluxes F_E, F_W | `solver/discretization.py` | `convective_mass_fluxes()` → `F_E, F_W, F_N, F_S` |
+| Convection coefficients | `solver/discretization.py` | `neighbour_coeffs()` |

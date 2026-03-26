@@ -6,11 +6,16 @@ Uniform Cartesian grid for the 2D lid-driven cavity.
 Theory reference: theory/02_finite_volume_discretization.md
                   theory/08_lid_driven_cavity_setup.md
 
-The grid stores:
-  - Physical dimensions (L)
-  - Number of cells (nx, ny)
-  - Spacing (dx, dy)
-  - Cell-centre coordinate arrays (x, y)
+GRID ARRANGEMENT
+-----------------
+This solver uses a node-based collocated grid: u, v, p are all stored at
+the same grid points, and the grid points include the physical boundaries.
+
+  x[i] = i * dx,   i = 0 ... nx-1
+  y[j] = j * dy,   j = 0 ... ny-1
+
+So x[0] = 0 and x[nx-1] = L — these are the actual boundary nodes.
+Interior nodes (where Gauss-Seidel iterates) run i = 1..nx-2, j = 1..ny-2.
 
 Convention:
   x → horizontal (i-index)
@@ -23,14 +28,14 @@ import numpy as np
 
 class Grid:
     """
-    Uniform Cartesian grid.
+    Uniform Cartesian grid (node-based, boundaries included).
 
     Parameters
     ----------
     nx : int
-        Number of grid points (cell centres) in x-direction.
+        Number of grid points in x-direction (includes both boundary nodes).
     ny : int
-        Number of grid points (cell centres) in y-direction.
+        Number of grid points in y-direction (includes both boundary nodes).
     L  : float
         Side length of the square domain [m].
     """
@@ -40,19 +45,15 @@ class Grid:
         self.ny = ny
         self.L  = L
 
-        # Grid spacing
-        # For N points on [0, L]: spacing = L / (N-1)
+        # Grid spacing between nodes
         self.dx = L / (nx - 1)
         self.dy = L / (ny - 1)
 
-        # Cell-centre coordinates
-        # x[i] = i * dx,  i = 0 ... nx-1
+        # Node coordinates: x[0]=0, x[nx-1]=L (boundary nodes included)
         self.x = np.linspace(0.0, L, nx)
         self.y = np.linspace(0.0, L, ny)
 
         # 2D meshgrid (useful for plotting)
-        # X[i,j] = x-coordinate of cell (i,j)
-        # Y[i,j] = y-coordinate of cell (i,j)
         self.X, self.Y = np.meshgrid(self.x, self.y, indexing='ij')
 
     def __repr__(self):

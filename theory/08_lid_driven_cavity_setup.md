@@ -4,13 +4,17 @@
 
 Unit square: 0 ≤ x ≤ 1,  0 ≤ y ≤ 1
 
-Uniform grid with `N×N` cells. Grid spacing: `dx = dy = 1/(N-1)`.
+Uniform grid with `N×N` nodes. Grid spacing: `dx = dy = 1/(N-1)`.
 
-Cell centres at:
+Node coordinates (boundary nodes included):
 ```
 x[i] = i * dx,   i = 0 ... N-1
 y[j] = j * dy,   j = 0 ... N-1
 ```
+
+So `x[0] = 0.0` and `x[N-1] = 1.0` — the boundary walls sit exactly on
+the first and last nodes. Gauss-Seidel iterates only the interior nodes
+`i = 1..N-2`, `j = 1..N-2`. Boundary nodes are set by BCs directly.
 
 ---
 
@@ -18,17 +22,15 @@ y[j] = j * dy,   j = 0 ... N-1
 
 | Wall | Location | u | v |
 |---|---|---|---|
-| Bottom | y = 0 | 0 | 0 |
-| Top (lid) | y = L | U_lid = 1 | 0 |
-| Left | x = 0 | 0 | 0 |
-| Right | x = L | 0 | 0 |
+| Bottom | y = 0, j = 0 | 0 | 0 |
+| Top (lid) | y = L, j = N-1 | U_lid = 1 | 0 |
+| Left | x = 0, i = 0 | 0 | 0 |
+| Right | x = L, i = N-1 | 0 | 0 |
 
-These are **Dirichlet** conditions — fixed values applied after each sweep.
+These are **Dirichlet** conditions — fixed values applied directly to the
+boundary nodes after each Gauss-Seidel sweep.
 
-In code: the boundary cells (index 0 and N-1) are NOT solved by Gauss-Seidel.
-The inner loops run from `i = 1 ... N-2` and `j = 1 ... N-2`.
-Boundary cells are set directly:
-
+In code:
 ```python
 u[:, -1] = U_lid   # top wall: moving lid
 u[:,  0] = 0.0     # bottom wall
@@ -47,7 +49,7 @@ The wall is impermeable — no flow through it — so the pressure-correction
 normal gradient is zero at all walls:
 
 ```
-dp'/dn = 0  →  p'_boundary = p'_first_interior
+dp'/dn = 0  →  p'_boundary = p'_first_interior_node
 ```
 
 In code:
@@ -66,23 +68,13 @@ For an **enclosed** domain with only Neumann pressure BCs, the pressure
 equation has infinitely many solutions — you can add any constant to p
 and still satisfy both the momentum equations and continuity.
 
-Mathematically: the pressure-correction equation is:
-```
-∇·(D_f ∇p') = bP
-```
-This is a Poisson equation with only Neumann BCs. The solution exists
-only if ∫bP dV = 0 (which it is, by global mass conservation), but is
-unique only up to an additive constant.
-
-**Fix 1 (used here):** subtract the mean of p' after each solve:
+**Fix used here:** subtract the mean of p' after each solve:
 ```python
 p_prime -= np.mean(p_prime)
 ```
 
-**Fix 2 (alternative):** pin one cell: `p[0, 0] = 0` and skip it in the solver.
-
-Both approaches are valid. Subtracting the mean is simpler and keeps the
-pressure physically centered around zero.
+This keeps pressure centered around zero and makes the solution unique.
+An alternative is to pin one node: `p[0, 0] = 0` and skip it in the solver.
 
 ---
 
@@ -93,8 +85,7 @@ u[:, :] = 0.0    # fluid at rest
 v[:, :] = 0.0
 p[:, :] = 0.0    # zero pressure everywhere
 
-# Apply lid BC immediately
-u[:, -1] = U_lid
+u[:, -1] = U_lid   # apply lid BC immediately
 ```
 
 The solver will develop the flow from this rest state.
@@ -107,11 +98,11 @@ The solver will develop the flow from this rest state.
 Re = U_lid * L / nu = 1.0 * 1.0 / nu
 ```
 
-| nu | Re | Grid | Notes |
+| nu | Re | Suggested grid | Notes |
 |---|---|---|---|
-| 0.01 | 100 | 41×41 | Easy, fast, validates against Ghia |
+| 0.01 | 100 | 41×41 | Fast, validates easily against Ghia |
 | 0.0025 | 400 | 41×41 | Good secondary vortices |
-| 0.001 | 1000 | 81×81 | Needs finer grid |
+| 0.001 | 1000 | 81×81 | Needs finer grid, more iterations |
 
 ---
 
@@ -133,6 +124,11 @@ residual = np.max(np.abs(bP))
 ```
 
 Convergence when `residual < 1e-5` (or after fixed number of iterations).
+
+Early iterations may be non-monotonic — the pressure field is still
+developing and bP can temporarily increase before settling into steady
+decrease. This is normal. If bP diverges to infinity, see the troubleshooting
+section in README.
 
 ---
 
