@@ -102,6 +102,16 @@ gs_p   = 30   # Gauss–Seidel sweeps for pressure correction
 
 Early iterations may be non-monotonic — this is normal while the pressure field develops from zero.
 
+After convergence, plots are saved to `results/` and displayed:
+
+| Streamlines | Centreline u vs Ghia |
+|---|---|
+| ![Streamlines](results/streamlines.png) | ![u-centreline](results/u_centreline.png) |
+
+| Pressure + velocity | Convergence history |
+|---|---|
+| ![Pressure](results/pressure_velocity.png) | ![Convergence](results/convergence.png) |
+
 ---
 
 ## Troubleshooting

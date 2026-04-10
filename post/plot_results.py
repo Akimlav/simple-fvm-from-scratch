@@ -26,6 +26,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+# Directory for saved figures (PNGs are committed to the repo)
+RESULTS_DIR = "results"
+
 
 # =============================================================================
 # GHIA et al. (1982) BENCHMARK DATA — Re = 100
@@ -74,6 +77,8 @@ def plot_pressure_and_velocity(u, v, p, grid_x, grid_y):
     ax.set_title('Pressure Field and Velocity Vectors', fontsize=13)
     ax.set_aspect('equal')
     plt.tight_layout()
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    fig.savefig(os.path.join(RESULTS_DIR, 'pressure_velocity.png'), dpi=150)
     plt.show()
 
 
@@ -101,6 +106,8 @@ def plot_streamlines(u, v, p, grid_x, grid_y):
     ax.set_title('Streamlines', fontsize=13)
     ax.set_aspect('equal')
     plt.tight_layout()
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    fig.savefig(os.path.join(RESULTS_DIR, 'streamlines.png'), dpi=150)
     plt.show()
 
 
@@ -126,6 +133,8 @@ def plot_u_centreline(u, grid_x, grid_y):
     ax.legend(fontsize=10)
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    fig.savefig(os.path.join(RESULTS_DIR, 'u_centreline.png'), dpi=150)
     plt.show()
 
 
@@ -151,6 +160,8 @@ def plot_v_centreline(v, grid_x, grid_y):
     ax.legend(fontsize=10)
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    fig.savefig(os.path.join(RESULTS_DIR, 'v_centreline.png'), dpi=150)
     plt.show()
 
 
@@ -169,6 +180,8 @@ def plot_convergence(residuals):
     ax.set_title('SIMPLE Convergence History', fontsize=12)
     ax.grid(True, which='both', alpha=0.3)
     plt.tight_layout()
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    fig.savefig(os.path.join(RESULTS_DIR, 'convergence.png'), dpi=150)
     plt.show()
 
 
