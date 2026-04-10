@@ -1,67 +1,30 @@
 # simple-fvm-from-scratch
 
-**A complete, from-scratch 2D incompressible Navier–Stokes solver** built to teach you how SIMPLE and the Finite Volume Method actually work — equation by equation, line by line.
-
+A complete, from-scratch 2D incompressible Navier–Stokes solver built to teach how SIMPLE and the Finite Volume Method actually work — equation by equation, line by line.
 
 ---
 
-## What This Is
+## Quick Start
 
-This repository implements a **lid-driven cavity** flow solver using:
+```bash
+pip install numpy matplotlib
+python run_simulation.py
+```
+
+This runs a lid-driven cavity simulation at Re = 100 on a 41×41 grid. You'll see convergence output and four plots: pressure contours, streamlines, and centreline velocity comparisons against the Ghia et al. (1982) benchmark.
+
+---
+
+## What's Inside
 
 | Component | Method |
 |---|---|
-| Spatial discretisation | Finite Volume Method (FVM), uniform collocated Cartesian grid |
+| Spatial discretisation | Finite Volume Method, uniform collocated Cartesian grid |
 | Pressure–velocity coupling | SIMPLE algorithm (Patankar, 1980) |
 | Checkerboard fix | Rhie–Chow interpolation |
 | Convection scheme | Upwind differencing |
-| Diffusion | Central differencing |
 | Linear solver | Gauss–Seidel iteration |
-| Dependencies | `numpy` only |
-
-Every equation in the `theory/` notes has a direct, named counterpart in the `solver/` code. If you see `a_P u_P = a_E u_E + ...` in a markdown file, you will find `aP`, `aE`, etc. in the corresponding Python file.
-
----
-
-## What is FVM?
-
-The **Finite Volume Method** discretises the governing PDEs by integrating them over small control volumes (cells) rather than evaluating them at points. The integral form naturally conserves mass, momentum, and energy. Fluxes through shared faces are computed once and used by both neighbouring cells.
-
-For a scalar φ satisfying a general transport equation:
-
-```
-∂/∂t(ρφ) + ∇·(ρuφ) = ∇·(Γ∇φ) + S
-```
-
-integrating over a cell volume V and applying Gauss's theorem:
-
-```
-∑_faces (ρ u_f φ_f A_f) = ∑_faces (Γ (∂φ/∂n)_f A_f) + S·V
-```
-
-Each face flux becomes a coefficient in the linear system.
-
----
-
-## What is SIMPLE?
-
-**SIMPLE** (Semi-Implicit Method for Pressure-Linked Equations) solves the incompressible Navier–Stokes equations by decoupling pressure and velocity through a predictor–corrector loop:
-
-1. **Guess** a pressure field `p`
-2. **Solve** momentum equations → get predicted velocities `u*`, `v*` (which violate continuity)
-3. **Derive** a pressure-correction equation from the continuity constraint
-4. **Solve** for `p'` (pressure correction)
-5. **Correct** pressure: `p ← p + αp · p'`
-6. **Correct** velocities: `u ← u* − (dy/aP) · ∂p'/∂x`
-7. **Repeat** until the mass imbalance is negligible
-
-The key insight: the momentum equation tells us how to turn a pressure gradient into a velocity correction. SIMPLE exploits this to build the pressure equation.
-
----
-
-## What is Rhie–Chow?
-
-On a collocated grid (u, v, p all at the same locations), naive interpolation of velocities to faces lets a **checkerboard pressure field** satisfy continuity exactly — a purely numerical artefact. Rhie–Chow interpolation adds a compact pressure-gradient term to the face velocity that eliminates this decoupling without moving to a staggered grid.
+| Dependencies | `numpy` only (`matplotlib` for plots) |
 
 ---
 
@@ -70,11 +33,20 @@ On a collocated grid (u, v, p all at the same locations), naive interpolation of
 ```
 simple-fvm-from-scratch/
 │
-├── README.md                  ← you are here
-├── requirements.txt
-├── run_simulation.py          ← entry point: runs SIMPLE, saves results
+├── run_simulation.py          ← entry point
 │
-├── theory/                    ← step-by-step derivations
+├── solver/                    ← one file per concept
+│   ├── grid.py                ← mesh geometry
+│   ├── fields.py              ← field arrays (u, v, p, p', bP)
+│   ├── discretization.py      ← FVM coefficient assembly
+│   ├── momentum.py            ← u* and v* prediction
+│   ├── pressure.py            ← pressure-correction equation
+│   ├── rhie_chow.py           ← face velocity interpolation
+│   ├── simple.py              ← outer SIMPLE loop
+│   ├── linear_solvers.py      ← Gauss–Seidel solver
+│   └── boundary_conditions.py ← velocity and pressure BCs
+│
+├── theory/                    ← step-by-step derivations (start here)
 │   ├── 01_what_problem_are_we_solving.md
 │   ├── 02_finite_volume_discretization.md
 │   ├── 03_momentum_equations.md
@@ -84,54 +56,61 @@ simple-fvm-from-scratch/
 │   ├── 07_rhie_chow_interpolation.md
 │   └── 08_lid_driven_cavity_setup.md
 │
-├── solver/                    ← one file per concept
-│   ├── grid.py                ← mesh geometry
-│   ├── fields.py              ← field initialisation
-│   ├── discretization.py      ← FVM coefficient assembly
-│   ├── linear_solvers.py      ← Gauss–Seidel (used by momentum.py and pressure.py)
-│   ├── momentum.py            ← u* and v* prediction
-│   ├── pressure.py            ← pressure-correction equation
-│   ├── rhie_chow.py           ← face velocity interpolation
-│   ├── simple.py              ← outer SIMPLE loop
-│   └── boundary_conditions.py ← all BCs in one place
-│
 └── post/
-    └── plot_results.py        ← matplotlib visualisation + Ghia comparison
+    └── plot_results.py        ← visualisation + Ghia comparison
 ```
+
+Every equation in the `theory/` notes has a direct counterpart in the `solver/` code. Each theory chapter ends with a table mapping concepts to files and functions.
 
 ---
 
-## How to Run
+## Changing Parameters
 
-```bash
-pip install numpy matplotlib
-python run_simulation.py
+Edit `run_simulation.py`:
+
+```python
+# Reynolds number (change nu)
+nu = 1e-2     # Re = 100  (default, fast convergence)
+nu = 2.5e-3   # Re = 400  (increase n_iter to ~2000)
+nu = 1e-3     # Re = 1000 (use 61×61 or 81×81 grid)
+
+# Grid resolution
+nx, ny = 41, 41   # default
+nx, ny = 81, 81   # finer, needed for Re >= 1000
+
+# Under-relaxation (reduce if diverging)
+urf_u, urf_v = 0.5, 0.5   # momentum
+urf_p = 0.2                # pressure
+
+# Inner solver sweeps
+gs_mom = 10   # Gauss–Seidel sweeps for momentum
+gs_p   = 30   # Gauss–Seidel sweeps for pressure correction
 ```
-
-Results are saved to `results/` as numpy `.npy` files and four plots are displayed:
-
-1. Pressure contour + velocity quiver
-2. Streamlines
-3. Centreline u-velocity vs Ghia et al. (1982) benchmark
-4. Centreline v-velocity vs Ghia et al. (1982) benchmark
 
 ---
 
 ## Expected Output
 
 ```
-Iteration   1 | mass residual: 3.241e+00
-Iteration   5 | mass residual: 8.123e-01
-Iteration  20 | mass residual: 4.512e-02
-Iteration 100 | mass residual: 6.710e-04
-Iteration 500 | mass residual: 2.183e-06
+  Iteration    0:  max|bP| = 3.241000e+00
+  Iteration   10:  max|bP| = 4.512000e-02
+  Iteration  100:  max|bP| = 6.710000e-04
+  Iteration  300:  max|bP| = 2.183000e-06
+
+  Converged at iteration 312 with max|bP| = 9.87e-06
 ```
 
-The continuity residual should decrease overall, though **early iterations
-may be non-monotonic** — while the pressure field is still developing from
-zero, bP can temporarily increase before settling into a steady decrease.
-This is normal. At Re = 100 with a 41×41 grid and 500 SIMPLE iterations,
-the centreline profiles match Ghia et al. within a few percent.
+Early iterations may be non-monotonic — this is normal while the pressure field develops from zero.
+
+After convergence, plots are saved to `results/` and displayed:
+
+| Streamlines | Centreline u vs Ghia |
+|---|---|
+| ![Streamlines](results/streamlines.png) | ![u-centreline](results/u_centreline.png) |
+
+| Pressure + velocity | Convergence history |
+|---|---|
+| ![Pressure](results/pressure_velocity.png) | ![Convergence](results/convergence.png) |
 
 ---
 
@@ -139,57 +118,25 @@ the centreline profiles match Ghia et al. within a few percent.
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| bP diverges to infinity | Under-relaxation too aggressive | Reduce `urf_u`, `urf_v` to 0.3 |
-| Slow convergence, barely decreasing | Not enough inner sweeps | Increase `gs_p` to 50 |
-| Checkerboard pattern in pressure plot | Bug in Rhie-Chow or `au_P_arr` | Check `au_P_arr` is not all-ones (initialisation bug) |
-| Primary vortex not forming | Lid BC not applied to `u_star` | Check `apply_velocity_bcs` is called after each G-S sweep in momentum |
+| Residual diverges to infinity | Under-relaxation too aggressive | Reduce `urf_u`, `urf_v` to 0.3 |
+| Very slow convergence | Too few pressure sweeps | Increase `gs_p` to 50 |
+| Checkerboard in pressure plot | Bug in Rhie–Chow or `au_P_arr` | Check `au_P_arr` is not all-ones |
+| Vortex not forming | Lid BC not enforced during solve | Verify `apply_velocity_bcs` is called after each G-S sweep |
 | Centreline profiles shifted from Ghia | Grid too coarse | Increase to 61×61 or 81×81 |
 
 ---
 
-## Validation: Ghia et al. (1982)
+## Validation
 
-The standard benchmark for this problem is:
+Benchmark: Ghia, U., Ghia, K.N., & Shin, C.T. (1982). *High-Re solutions for incompressible flow using the Navier–Stokes equations and a multigrid method.* Journal of Computational Physics, **48**(3), 387–411.
 
-> Ghia, U., Ghia, K.N., & Shin, C.T. (1982). High-Re solutions for incompressible flow using the Navier-Stokes equations and a multigrid method. *Journal of Computational Physics*, **48**(3), 387–411.
-
-They solved the lid-driven cavity at Re = 100, 400, 1000, 3200, 5000, 7500, 10000 on a 129×129 grid using a vorticity–streamfunction multigrid solver. Their tabulated centreline velocities are the accepted reference values.
-
-At Re = 100, the primary vortex centre is near (0.617, 0.737). Our solver should reproduce this vortex clearly and match the u-velocity profile along x = 0.5 to within 2–5% on a 41×41 grid.
-
----
-
-## Changing Reynolds Number
-
-In `run_simulation.py`, change the kinematic viscosity:
-
-```python
-nu = 1e-2    # Re = 100  (default, converges easily)
-nu = 2.5e-3  # Re = 400  (increase iterations to ~2000)
-nu = 1e-3    # Re = 1000 (needs finer grid, ~61x61)
-```
-
----
-
-## Reading Order
-
-Read the theory files in this order, then open `run_simulation.py` and follow
-the code — every step references the theory files.
-
-1. `theory/01_what_problem_are_we_solving.md` — physics and governing equations
-2. `theory/02_finite_volume_discretization.md` — how PDEs become algebraic equations
-3. `theory/03_momentum_equations.md` — assembling the u and v equations
-4. `theory/04_pressure_velocity_coupling.md` — why pressure is hard, the checkerboard problem
-5. `theory/05_simple_algorithm.md` — the full SIMPLE loop
-6. `theory/06_gauss_seidel_solver.md` — the linear solver used inside SIMPLE
-7. `theory/07_rhie_chow_interpolation.md` — fixing the checkerboard in continuity
-8. `theory/08_lid_driven_cavity_setup.md` — boundary conditions and problem setup
+At Re = 100, the primary vortex centre should be near (0.617, 0.737). Centreline velocity profiles match Ghia within 2–5% on a 41×41 grid.
 
 ---
 
 ## References
 
 - Patankar, S.V. (1980). *Numerical Heat Transfer and Fluid Flow*. Hemisphere Publishing.
-- Ferziger, J.H. & Perić, M. (2002). *Computational Methods for Fluid Dynamics*. Springer.
-- Rhie, C.M. & Chow, W.L. (1983). Numerical study of the turbulent flow past an airfoil with trailing edge separation. *AIAA Journal*, 21(11), 1525–1532.
-- Ghia, U., Ghia, K.N., & Shin, C.T. (1982). High-Re solutions for incompressible flow using the Navier-Stokes equations and a multigrid method. *Journal of Computational Physics*, 48(3), 387–411.
+- Ferziger, J.H. & Peric, M. (2002). *Computational Methods for Fluid Dynamics*. Springer.
+- Rhie, C.M. & Chow, W.L. (1983). Numerical study of the turbulent flow past an airfoil with trailing edge separation. *AIAA Journal*, **21**(11), 1525–1532.
+- Ghia, U., Ghia, K.N., & Shin, C.T. (1982). *Journal of Computational Physics*, **48**(3), 387–411.
