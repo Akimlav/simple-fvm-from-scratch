@@ -4,20 +4,20 @@ These 8 chapters derive every equation in the solver from first principles. Star
 
 ```
                     ┌─────────────────────────┐
-                    │  01  Governing Equations │   What PDEs do we solve?
-                    │      (Navier–Stokes)     │   Continuous form.
+                    │  01  Governing Equations│   What PDEs do we solve?
+                    │      (Navier–Stokes)    │   Continuous form.
                     └────────────┬────────────┘
                                  │
                                  ▼
                     ┌─────────────────────────┐
-                    │  02  Finite Volume       │   How to turn a PDE into
-                    │      Method (FVM)        │   an algebraic equation.
+                    │  02  Finite Volume      │   How to turn a PDE into
+                    │      Method (FVM)       │   an algebraic equation.
                     └────────────┬────────────┘
                                  │
                                  ▼
                     ┌─────────────────────────┐
-                    │  03  Momentum Equations  │   Upwind scheme, coefficients,
-                    │      (Discrete)          │   pressure source, under-relaxation.
+                    │  03  Momentum Equations │   Upwind scheme, coefficients,
+                    │      (Discrete)         │   pressure source, under-relaxation.
                     └────────────┬────────────┘
                                  │
                     ┌────────────┴────────────┐
