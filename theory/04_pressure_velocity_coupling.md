@@ -1,92 +1,108 @@
 # 04 — Pressure–Velocity Coupling
 
-## The Problem
+This chapter explains the central difficulty of incompressible flow: **there is no explicit equation for pressure**. It then shows how a collocated grid makes the problem worse (checkerboard instability) and previews the two techniques that fix it: the SIMPLE algorithm and Rhie–Chow interpolation.
 
-The incompressible Navier–Stokes system has **three unknowns** (u, v, p)
-and **three equations** (continuity, x-momentum, y-momentum).
+---
 
-The issue: **pressure has no independent equation**.
+## The Problem: No Equation for Pressure
 
-- Momentum equations contain ∇p as a forcing term.
-- Continuity constrains ∇·u = 0 but says nothing directly about p.
+After discretisation (Chapters 2–3) we have, for each interior cell $(i,j)$:
 
-For compressible flow, pressure comes from the equation of state (ρ = ρ(p)).
-For incompressible flow, that link is broken — pressure is a **Lagrange
-multiplier** that enforces the divergence-free constraint.
+| Equation | Solves for | Contains |
+|---|---|---|
+| $x$-momentum | $u$ | $u$, $v$, $p$ |
+| $y$-momentum | $v$ | $u$, $v$, $p$ |
+| Continuity | — | $u$, $v$ only |
+
+Three equations, three unknowns ($u, v, p$) — but look at the structure:
+
+- Momentum equations contain $\nabla p$ as a forcing term, so if we **knew** $p$ we could solve for $u$ and $v$ directly.
+- Continuity constrains $\nabla \cdot \mathbf{u} = 0$ but **contains no pressure at all**.
+
+There is no equation of the form "$\text{something}(p) = \text{something else}$". For compressible flow the equation of state $\rho = \rho(p)$ provides the missing link. For **incompressible** flow, $\rho$ is constant regardless of $p$. Pressure acts as a **Lagrange multiplier** — whatever value it takes, it must be the one that makes the velocity field divergence-free.
 
 ---
 
 ## The Collocated Grid Problem: Checkerboarding
 
-On a **collocated grid** (u, v, p at the same locations), the discrete
-pressure gradient in the momentum equation couples **alternating** cells.
+On our collocated grid, $u$, $v$, and $p$ are all stored at the same node locations. This is simple to code but introduces a numerical artefact.
 
-For the central-difference approximation:
+### Checkerboard in the Momentum Equation
 
-```
-∂p/∂x |_P ≈ (p[i+1] - p[i-1]) / (2 dx)
-```
+The pressure gradient in the $x$-momentum equation uses a **central difference** over two grid spacings:
 
-Cell (i) is coupled to cells (i-1) and (i+1) but **not** to cell (i).
-This means an alternating pressure field like:
+$$\frac{\partial p}{\partial x}\bigg|_P \approx \frac{p_{i+1,j} - p_{i-1,j}}{2\,\Delta x}$$
+
+Cell $P = (i,j)$ couples to cells $(i+1,j)$ and $(i-1,j)$, **skipping** cell $(i,j)$ itself. Now consider a pressure field that alternates:
 
 ```
-high - low - high - low - ...
+index:     0     1     2     3     4
+p:       100     0   100     0   100
 ```
 
-produces **zero** pressure gradient in the momentum equation!
+At node 2:
 
-Such a "checkerboard" pressure field would satisfy the discrete equations
-even though it is physically meaningless.
+$$\frac{\partial p}{\partial x}\bigg|_2 \approx \frac{p_3 - p_1}{2\,\Delta x} = \frac{0 - 0}{2\,\Delta x} = 0$$
+
+The momentum equation sees **zero pressure gradient** even though the pressure is oscillating wildly. The checkerboard pattern is **invisible** to the discrete momentum operator.
+
+### Checkerboard in the Continuity Equation
+
+The problem extends to continuity. If we naively interpolate velocity to faces:
+
+$$u_e = \tfrac{1}{2}(u_P + u_E)$$
+
+then the discrete continuity $\frac{u_e - u_w}{\Delta x} + \frac{v_n - v_s}{\Delta y} = 0$ becomes:
+
+$$\frac{u_{i+1,j} - u_{i-1,j}}{2\,\Delta x} + \frac{v_{i,j+1} - v_{i,j-1}}{2\,\Delta y} = 0$$
+
+Again a **wide stencil** that couples only alternating cells. A checkerboard velocity field would satisfy discrete continuity exactly.
+
+### The Root Cause
+
+Both equations use **two-cell-wide** stencils for the terms that couple pressure and velocity. This decouples the "even" grid from the "odd" grid — two independent solutions coexist on interleaved sub-grids.
 
 ---
 
-## Staggered Grid (Traditional Solution)
+## Traditional Fix: The Staggered Grid
 
-The classic fix is the **staggered grid**: store u at east/west face centres,
-v at north/south face centres, and p at cell centres.
+The classic remedy (Harlow & Welch, 1965) stores different variables at different locations:
 
-Then the pressure gradient uses directly adjacent pressure values:
+- $p$ at cell centres
+- $u$ at east/west face centres
+- $v$ at north/south face centres
 
-```
-∂p/∂x |_e ≈ (p_E - p_P) / dx    ← adjacent cells, no skipping!
-```
+Then the pressure gradient at a $u$-location uses **directly adjacent** pressure values:
 
-This eliminates checkerboarding but complicates the code significantly.
+$$\frac{\partial p}{\partial x}\bigg|_e \approx \frac{p_E - p_P}{\Delta x}$$
 
----
-
-## Collocated Grid + Rhie–Chow (Modern Approach)
-
-We keep everything at cell centres (**simpler code**) but use a special
-interpolation (Rhie-Chow, Chapter 7) when computing face velocities for
-the continuity equation.
-
-The Rhie-Chow face velocity uses a **compact** pressure gradient:
-
-```
-u_e = avg(u_P, u_E) - avg(dy/a_P) * (p_E - p_P)
-```
-
-The compact term `(p_E - p_P)` couples **adjacent** cells — it sees the
-checkerboard where the momentum equation does not.
-
-When the checkerboard appears, `(p_E - p_P)` is large → Rhie-Chow velocity
-is modified → continuity is violated → pressure correction eliminates it.
+This is a **compact stencil** — it sees every cell, no skipping. Checkerboarding is eliminated. However, staggered grids are significantly more complex to code: different variables live on different grids, and interpolation between them is needed everywhere.
 
 ---
 
-## The SIMPLE Strategy
+## Modern Fix: Collocated Grid + Rhie–Chow
 
-Given this coupling problem, SIMPLE (Chapter 5) uses:
+We keep everything at cell centres (**simpler code**, easier to extend to unstructured grids) and fix the checkerboard with a two-part strategy:
 
-1. **Predict** velocities from momentum (using current p, possibly wrong)
-2. **Derive** how much p must change to satisfy continuity
-3. **Correct** both p and velocities
-4. **Repeat** until continuity residual → 0
+### Part 1: Rhie–Chow Interpolation (Chapter 7)
 
-The pressure correction p' satisfies a Poisson-type equation derived in
-Chapter 5.
+When computing face velocities for the continuity equation, we do **not** use naive interpolation $u_e = \frac{1}{2}(u_P + u_E)$. Instead, we add a pressure-smoothing correction:
+
+$$u_e = \tfrac{1}{2}(u_P^* + u_E^*) - D_f\,(p_E - p_P)$$
+
+The key term is $(p_E - p_P)$: a **compact** pressure gradient that couples **adjacent** cells. If a checkerboard is present, $(p_E - p_P)$ is large, the face velocity is modified, the continuity residual becomes large, and the pressure correction eliminates the oscillation.
+
+### Part 2: SIMPLE Algorithm (Chapter 5)
+
+SIMPLE handles the pressure–velocity coupling iteratively:
+
+1. **Predict** velocities $u^*, v^*$ from momentum using current $p$
+2. **Check** continuity via Rhie–Chow face velocities → mass imbalance $b_P$
+3. **Solve** a pressure-correction equation to find $p'$ that drives $b_P \to 0$
+4. **Correct** $p$ and velocities
+5. **Repeat** until $\max|b_P| < \text{tolerance}$
+
+Together, SIMPLE provides the iteration for pressure–velocity coupling, and Rhie–Chow ensures the continuity equation couples adjacent cells so that the checkerboard mode is damped.
 
 ---
 
@@ -94,6 +110,6 @@ Chapter 5.
 
 | Concept | File | Function |
 |---|---|---|
-| Wide pressure gradient (momentum) | `solver/momentum.py` | `rhs` term |
-| Compact gradient (Rhie-Chow) | `solver/rhie_chow.py` | `compute_face_velocity_rhie_chow` |
-| SIMPLE loop | `solver/simple.py` | `run_simple` |
+| Wide pressure gradient (momentum) | `solver/momentum.py` | source term in `solve_u_star` |
+| Compact gradient (Rhie–Chow) | `solver/rhie_chow.py` | `compute_face_velocity_rhie_chow` |
+| SIMPLE outer loop | `solver/simple.py` | `run_simple` |
