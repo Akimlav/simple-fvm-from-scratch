@@ -102,7 +102,7 @@ These are computed from the **current** velocity field at the start of each SIMP
 
 The pressure gradient $-\partial p / \partial x$ is a source term for the $x$-momentum equation. Integrating over the cell volume:
 
-$$\int_V \!\left(-\frac{\partial p}{\partial x}\right) dV \approx -\frac{\partial p}{\partial x}\bigg|_P \cdot \Delta x\,\Delta y$$
+$$\int_V \left(-\frac{\partial p}{\partial x}\right) dV \approx -\frac{\partial p}{\partial x}\bigg|_P \cdot \Delta x\,\Delta y$$
 
 On a **collocated grid**, the pressure gradient at node $P$ is approximated by a central difference across two neighbours:
 

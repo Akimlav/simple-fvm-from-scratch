@@ -10,7 +10,7 @@ The Finite Volume Method (FVM) discretises a PDE not by approximating derivative
 
 From Chapter 1, every equation we solve has the general transport form:
 
-$$\frac{\partial(\rho u \phi)}{\partial x} + \frac{\partial(\rho v \phi)}{\partial y} = \frac{\partial}{\partial x}\!\left(\Gamma \frac{\partial \phi}{\partial x}\right) + \frac{\partial}{\partial y}\!\left(\Gamma \frac{\partial \phi}{\partial y}\right) + S_\phi$$
+$$\frac{\partial(\rho u \phi)}{\partial x} + \frac{\partial(\rho v \phi)}{\partial y} = \frac{\partial}{\partial x}\left(\Gamma \frac{\partial \phi}{\partial x}\right) + \frac{\partial}{\partial y}\left(\Gamma \frac{\partial \phi}{\partial y}\right) + S_\phi$$
 
 In compact vector notation:
 

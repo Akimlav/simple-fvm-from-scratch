@@ -117,7 +117,7 @@ $$u_e^{\text{corrected}} = u_e^{RC} - D_f^e\,(p_E' - p_P')$$
 
 where the face coupling coefficient is:
 
-$$D_f^e = \tfrac{1}{2}\,\Delta y\!\left(\frac{1}{a_P^P} + \frac{1}{a_P^E}\right)$$
+$$D_f^e = \tfrac{1}{2}\,\Delta y\left(\frac{1}{a_P^P} + \frac{1}{a_P^E}\right)$$
 
 Similarly for all four faces (using $a_P$ from the appropriate momentum equation).
 
@@ -137,13 +137,13 @@ $$- \;\rho\,\Delta y\,D_f^e\,(p_E' - p_P') + \rho\,\Delta y\,D_f^w\,(p_P' - p_W'
 
 Define the pressure-correction coefficients:
 
-$$a_E' = \rho\,\Delta y\,D_f^e = \tfrac{1}{2}\,\rho\,\Delta y^2 \!\left(\frac{1}{a_P^P} + \frac{1}{a_P^E}\right)$$
+$$a_E' = \rho\,\Delta y\,D_f^e = \tfrac{1}{2}\,\rho\,\Delta y^2 \left(\frac{1}{a_P^P} + \frac{1}{a_P^E}\right)$$
 
-$$a_W' = \rho\,\Delta y\,D_f^w = \tfrac{1}{2}\,\rho\,\Delta y^2 \!\left(\frac{1}{a_P^W} + \frac{1}{a_P^P}\right)$$
+$$a_W' = \rho\,\Delta y\,D_f^w = \tfrac{1}{2}\,\rho\,\Delta y^2 \left(\frac{1}{a_P^W} + \frac{1}{a_P^P}\right)$$
 
-$$a_N' = \rho\,\Delta x\,D_f^n = \tfrac{1}{2}\,\rho\,\Delta x^2 \!\left(\frac{1}{a_P^P} + \frac{1}{a_P^N}\right)$$
+$$a_N' = \rho\,\Delta x\,D_f^n = \tfrac{1}{2}\,\rho\,\Delta x^2 \left(\frac{1}{a_P^P} + \frac{1}{a_P^N}\right)$$
 
-$$a_S' = \rho\,\Delta x\,D_f^s = \tfrac{1}{2}\,\rho\,\Delta x^2 \!\left(\frac{1}{a_P^S} + \frac{1}{a_P^P}\right)$$
+$$a_S' = \rho\,\Delta x\,D_f^s = \tfrac{1}{2}\,\rho\,\Delta x^2 \left(\frac{1}{a_P^S} + \frac{1}{a_P^P}\right)$$
 
 $$a_P' = a_E' + a_W' + a_N' + a_S'$$
 
