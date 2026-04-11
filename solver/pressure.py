@@ -135,12 +135,13 @@ def solve_pressure_correction(fields: Fields, grid: Grid,
     # The source term for p' is -bP (see sign convention above)
     b_p = -fields.bP
 
-    # Gauss-Seidel solve (same function used for momentum equations)
-    gauss_seidel(fields.p_prime, aP_p, aE_p, aW_p, aN_p, aS_p,
-                 b_p, n_sweeps=gs_sweeps)
-
-    # Neumann BCs for p': dp'/dn = 0 at all walls
-    apply_pressure_neumann_bcs(fields.p_prime)
+    # Gauss-Seidel solve with Neumann BCs applied between each sweep.
+    # This mirrors the momentum solver (which applies velocity BCs between
+    # sweeps) and ensures boundary values stay consistent during iteration.
+    for _ in range(gs_sweeps):
+        gauss_seidel(fields.p_prime, aP_p, aE_p, aW_p, aN_p, aS_p,
+                     b_p, n_sweeps=1)
+        apply_pressure_neumann_bcs(fields.p_prime)
 
     # Fix pressure reference level: subtract mean so pressure stays near 0
     # Required because the p' equation with pure Neumann BCs is singular
