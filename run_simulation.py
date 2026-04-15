@@ -32,6 +32,7 @@ import numpy as np
 from solver.grid import Grid
 from solver.fields import Fields
 from solver.boundary_conditions import apply_velocity_bcs
+from solver.convection_schemes import SCHEME_CDS, SCHEME_SOU, convection_scheme_label
 from solver.simple import run_simple
 from post.plot_results import plot_all
 
@@ -40,7 +41,7 @@ from post.plot_results import plot_all
 # =============================================================================
 rho   = 1.0     # Density              [kg/m³]
 nu    = 1e-2    # Kinematic viscosity  [m²/s]  → Re = U*L/nu = 1/0.01 = 100
-# nu  = 2.5e-3  # Uncomment for Re = 400
+#nu  = 2.5e-3  # Uncomment for Re = 400
 # nu  = 1e-3    # Uncomment for Re = 1000 (use nx=ny=81 or larger)
 mu    = nu * rho  # Dynamic viscosity  [Pa·s]
 
@@ -57,8 +58,8 @@ print(f"Reynolds number: Re = {Re:.0f}")
 # 41×41  : fast, good for Re=100 validation
 # 61×61  : better for Re=400
 # 81×81  : recommended for Re=1000
-nx = 41
-ny = 41
+nx = 129
+ny = 129
 
 grid = Grid(nx=nx, ny=ny, L=L)
 print(f"Grid: {grid}")
@@ -81,21 +82,25 @@ print(f"Fields initialised. Lid BC: u[:, -1] = {U_lid}")
 # Under-relaxation factors
 #   Momentum: 0.5 is a safe starting value for Re=100
 #   Pressure: 0.2 is conservative; increase to 0.3 if converging well
-urf_u = 0.5   # u-momentum under-relaxation
-urf_v = 0.5   # v-momentum under-relaxation
-urf_p = 0.2   # pressure under-relaxation
+urf_u = 0.7   # u-momentum under-relaxation
+urf_v = 0.7   # v-momentum under-relaxation
+urf_p = 0.3   # pressure under-relaxation
 
 # Gauss-Seidel sweeps per SIMPLE iteration
-gs_mom = 10   # sweeps for each momentum equation
-gs_p   = 30   # sweeps for pressure-correction equation
+gs_mom = 20   # sweeps for each momentum equation
+gs_p   = 100   # sweeps for pressure-correction equation
 
 # SIMPLE outer iterations
-n_iter = 500
+n_iter = 1500
 
 # Convergence tolerance on max continuity residual
-tol = 1e-5
+tol = 1e-10
+
+# Momentum convection: SCHEME_SOU (default), SCHEME_CDS, or "uds" (CDS: low Re / fine grid)
+convection_scheme = SCHEME_CDS
 
 print(f"\nSolver settings:")
+print(f"  Convection: {convection_scheme_label(convection_scheme)}")
 print(f"  Under-relaxation: α_u={urf_u}, α_v={urf_v}, α_p={urf_p}")
 print(f"  Gauss-Seidel sweeps: momentum={gs_mom}, pressure={gs_p}")
 print(f"  Max SIMPLE iterations: {n_iter}")
@@ -124,6 +129,7 @@ residuals = run_simple(
     U_lid    = U_lid,
     print_every = 25,
     tol      = tol,
+    convection_scheme = convection_scheme,
 )
 
 elapsed = time.time() - t0
@@ -156,16 +162,23 @@ print(f"  u range: [{fields.u.min():.4f}, {fields.u.max():.4f}]  (lid = {U_lid})
 print(f"  v range: [{fields.v.min():.4f}, {fields.v.max():.4f}]")
 print(f"  p range: [{fields.p.min():.4f}, {fields.p.max():.4f}]")
 
-# Vortex centre: approximate location of max |ω|
-# Vorticity ω = ∂v/∂x - ∂u/∂y
-omega = (np.gradient(fields.v, grid.x, axis=0)
-       - np.gradient(fields.u, grid.y, axis=1))
-i_vort, j_vort = np.unravel_index(np.argmax(np.abs(omega)), omega.shape)
-print(f"  Primary vortex centre ≈ ({grid.x[i_vort]:.3f}, {grid.y[j_vort]:.3f})")
-print(f"  (Expected near (0.5, 0.7) for Re=100)")
+# Vortex centre: ω = ∂v/∂x - ∂u/∂y is correct, but argmax(|ω|) is not the eddy centre —
+# lid corners and the wall shear layer have much larger |ω| than the vortex core.
+# Use streamfunction ψ with ∂ψ/∂y = u and ψ = 0 on the bottom wall; the primary cell’s
+# eye lies near the interior minimum of ψ (Ghia-style cavity benchmark).
+psi = np.zeros_like(fields.u)
+for j in range(1, grid.ny):
+    psi[:, j] = psi[:, j - 1] + grid.dy * 0.5 * (
+        fields.u[:, j - 1] + fields.u[:, j]
+    )
+psi_int = psi[1:-1, 1:-1]
+i_in, j_in = np.unravel_index(np.argmin(psi_int), psi_int.shape)
+i_vc, j_vc = i_in + 1, j_in + 1
+print(f"  Primary vortex centre ≈ ({grid.x[i_vc]:.3f}, {grid.y[j_vc]:.3f})  (ψ minimum, interior)")
+print(f"  (Expected near (0.5, 0.7) for Re=100, Ghia et al.)")
 
 # =============================================================================
 # PLOT
 # =============================================================================
 print("\nGenerating plots...")
-plot_all(fields.u, fields.v, fields.p, grid.x, grid.y, residuals)
+plot_all(fields.u, fields.v, fields.p, grid.x, grid.y, residuals, re=Re)

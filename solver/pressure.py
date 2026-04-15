@@ -21,10 +21,10 @@ Substituting corrected face velocities into continuity gives a Poisson eq:
 
 where the coefficients are:
 
-  a_E'[i,j] = ρ dy² * 0.5 * (1/a_P[i,j]   + 1/a_P[i+1,j])
-  a_W'[i,j] = ρ dy² * 0.5 * (1/a_P[i-1,j] + 1/a_P[i,j])
-  a_N'[i,j] = ρ dx² * 0.5 * (1/a_P[i,j]   + 1/a_P[i,j+1])
-  a_S'[i,j] = ρ dx² * 0.5 * (1/a_P[i,j-1] + 1/a_P[i,j])
+  a_E'[i,j] = ρ dy² * 0.5 * (1/au_P[i,j]   + 1/au_P[i+1,j])   # u-momentum a_P
+  a_W'[i,j] = ρ dy² * 0.5 * (1/au_P[i-1,j] + 1/au_P[i,j])
+  a_N'[i,j] = ρ dx² * 0.5 * (1/av_P[i,j]   + 1/av_P[i,j+1])   # v-momentum a_P
+  a_S'[i,j] = ρ dx² * 0.5 * (1/av_P[i,j-1] + 1/av_P[i,j])
   a_P'[i,j] = a_E' + a_W' + a_N' + a_S'
 
 The Gauss-Seidel inner loop is handled by linear_solvers.gauss_seidel().
@@ -112,9 +112,9 @@ def solve_pressure_correction(fields: Fields, grid: Grid,
 
     Equation: a_P' p'_P = a_E' p'_E + a_W' p'_W + a_N' p'_N + a_S' p'_S - bP
 
-    Note the sign convention: bP is on the RHS with a MINUS sign.
-    This is because bP is the mass IN excess — a positive mass imbalance
-    requires a positive p' to slow the flow down and satisfy continuity.
+    Note the sign convention: bP is on the RHS with a MINUS sign
+    (see theory/05_simple_algorithm.md): a_P' p_P' = Σ a_nb' p_nb' - bP.
+    Here bP is the net outward mass flux from Rhie–Chow faces (Step 3).
 
     The p' equation has the same algebraic structure as the momentum equations
     (a_P φ_P = Σ a_nb φ_nb + source), so we use the same Gauss-Seidel solver.

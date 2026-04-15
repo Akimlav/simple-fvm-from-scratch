@@ -44,7 +44,12 @@ import numpy as np
 from solver.grid import Grid
 from solver.fields import Fields
 from solver.discretization import (diffusion_coeffs, convective_mass_fluxes,
-                                    neighbour_coeffs, central_coeff)
+                                    central_coeff)
+from solver.convection_schemes import (
+    ConvectionSchemeName,
+    convection_coeffs_u,
+    convection_coeffs_v,
+)
 from solver.boundary_conditions import apply_velocity_bcs
 from solver.linear_solvers import gauss_seidel
 
@@ -52,7 +57,8 @@ from solver.linear_solvers import gauss_seidel
 def solve_u_star(fields: Fields, grid: Grid,
                  rho: float, mu: float,
                  urf_u: float, gs_sweeps: int,
-                 U_lid: float) -> None:
+                 U_lid: float,
+                 convection_scheme: ConvectionSchemeName = "sou") -> None:
     """
     Solve u-momentum equation → update fields.u_star and fields.au_P_arr.
 
@@ -65,6 +71,7 @@ def solve_u_star(fields: Fields, grid: Grid,
     urf_u     : under-relaxation factor for u (0 < urf_u <= 1)
     gs_sweeps : number of Gauss-Seidel sweeps
     U_lid     : lid velocity (needed for BCs after solving)
+    convection_scheme : 'uds', 'cds' (central differencing), or 'sou' (second-order upwind)
     """
     nx, ny = grid.nx, grid.ny
     dx, dy = grid.dx, grid.dy
@@ -89,10 +96,13 @@ def solve_u_star(fields: Fields, grid: Grid,
             F_E, F_W, F_N, F_S = convective_mass_fluxes(
                 fields.u, fields.v, i, j, rho, dx, dy)
 
-            # Neighbour coefficients (upwind differencing)
-            # a_E = D_E + max(-F_E, 0),  etc.
-            aE, aW, aN, aS = neighbour_coeffs(F_E, F_W, F_N, F_S,
-                                               D_E, D_W, D_N, D_S)
+            # Neighbour coefficients (UDS or SOU + deferred correction)
+            aE, aW, aN, aS, b_corr = convection_coeffs_u(
+                fields.u, i, j,
+                F_E, F_W, F_N, F_S,
+                D_E, D_W, D_N, D_S,
+                convection_scheme,
+            )
 
             # Central coefficient
             # a_P = a_E + a_W + a_N + a_S + (F_E - F_W + F_N - F_S)
@@ -113,7 +123,7 @@ def solve_u_star(fields: Fields, grid: Grid,
             aN_arr[i, j] = aN
             aS_arr[i, j] = aS
             aP_arr[i, j] = aP_relax
-            b_arr[i, j]  = b_relax + b_pressure
+            b_arr[i, j]  = b_relax + b_pressure + b_corr
 
             # Store UNRELAXED a_P for Rhie-Chow and velocity correction
             fields.au_P_arr[i, j] = aP
@@ -135,13 +145,16 @@ def solve_u_star(fields: Fields, grid: Grid,
 def solve_v_star(fields: Fields, grid: Grid,
                  rho: float, mu: float,
                  urf_v: float, gs_sweeps: int,
-                 U_lid: float) -> None:
+                 U_lid: float,
+                 convection_scheme: ConvectionSchemeName = "sou") -> None:
     """
     Solve v-momentum equation → update fields.v_star and fields.av_P_arr.
 
     Identical structure to solve_u_star. Differences:
       - Solves for v instead of u
       - Pressure gradient in y: -(p[i,j+1] - p[i,j-1]) * dx / 2
+
+    convection_scheme : same as solve_u_star ('uds', 'cds', or 'sou').
     """
     nx, ny = grid.nx, grid.ny
     dx, dy = grid.dx, grid.dy
@@ -161,8 +174,12 @@ def solve_v_star(fields: Fields, grid: Grid,
             F_E, F_W, F_N, F_S = convective_mass_fluxes(
                 fields.u, fields.v, i, j, rho, dx, dy)
 
-            aE, aW, aN, aS = neighbour_coeffs(F_E, F_W, F_N, F_S,
-                                               D_E, D_W, D_N, D_S)
+            aE, aW, aN, aS, b_corr = convection_coeffs_v(
+                fields.v, i, j,
+                F_E, F_W, F_N, F_S,
+                D_E, D_W, D_N, D_S,
+                convection_scheme,
+            )
 
             aP = central_coeff(aE, aW, aN, aS, F_E, F_W, F_N, F_S)
 
@@ -178,7 +195,7 @@ def solve_v_star(fields: Fields, grid: Grid,
             aN_arr[i, j] = aN
             aS_arr[i, j] = aS
             aP_arr[i, j] = aP_relax
-            b_arr[i, j]  = b_relax + b_pressure
+            b_arr[i, j] = b_relax + b_pressure + b_corr
 
             fields.av_P_arr[i, j] = aP
 
