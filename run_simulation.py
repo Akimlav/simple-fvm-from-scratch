@@ -181,4 +181,5 @@ print(f"  (Expected near (0.5, 0.7) for Re=100, Ghia et al.)")
 # PLOT
 # =============================================================================
 print("\nGenerating plots...")
-plot_all(fields.u, fields.v, fields.p, grid.x, grid.y, residuals, re=Re)
+plot_all(fields.u, fields.v, fields.p, grid.x, grid.y, residuals, re=Re,
+        convection_scheme=convection_scheme)

@@ -50,6 +50,23 @@ _RE_COLUMN: Dict[int, str] = {
 _SERIES_U = "u_vertical_centre"
 _SERIES_V = "v_horizontal_centre"
 
+# Mapping from scheme short names to filename-friendly labels
+_SCHEME_FILE_LABELS: Dict[str, str] = {
+    "uds": "Upwind",
+    "cds": "CentralDifference",
+    "sou": "SecondOrderUpwind",
+}
+
+
+def _file_suffix(re: Optional[float] = None, scheme: Optional[str] = None) -> str:
+    """Build a filename suffix like '_Re100_CentralDifference' from Re and scheme."""
+    parts: List[str] = []
+    if re is not None:
+        parts.append(f"Re{int(re)}")
+    if scheme is not None:
+        parts.append(_SCHEME_FILE_LABELS.get(scheme, scheme))
+    return ("_" + "_".join(parts)) if parts else ""
+
 
 def _ghia_csv_path() -> str:
     return os.path.normpath(
@@ -106,7 +123,7 @@ def load_ghia_centreline_profiles(
     return out
 
 
-def plot_pressure_and_velocity(u, v, p, grid_x, grid_y):
+def plot_pressure_and_velocity(u, v, p, grid_x, grid_y, suffix: str = ""):
     """
     Plot pressure contours with velocity quiver arrows.
 
@@ -116,6 +133,7 @@ def plot_pressure_and_velocity(u, v, p, grid_x, grid_y):
     p       : 2D pressure array
     grid_x  : 1D x-coordinate array
     grid_y  : 1D y-coordinate array
+    suffix  : filename suffix (e.g. '_Re100_CentralDifference')
     """
     X, Y = np.meshgrid(grid_x, grid_y, indexing="ij")
 
@@ -142,11 +160,11 @@ def plot_pressure_and_velocity(u, v, p, grid_x, grid_y):
     ax.set_aspect("equal")
     plt.tight_layout()
     os.makedirs(RESULTS_DIR, exist_ok=True)
-    fig.savefig(os.path.join(RESULTS_DIR, "pressure_velocity.png"), dpi=150)
+    fig.savefig(os.path.join(RESULTS_DIR, f"pressure_velocity{suffix}.png"), dpi=150)
     plt.show()
 
 
-def plot_streamlines(u, v, p, grid_x, grid_y):
+def plot_streamlines(u, v, p, grid_x, grid_y, suffix: str = ""):
     """
     Plot streamlines overlaid on pressure contours.
 
@@ -156,6 +174,7 @@ def plot_streamlines(u, v, p, grid_x, grid_y):
     p       : 2D pressure array
     grid_x  : 1D x-coordinate array
     grid_y  : 1D y-coordinate array
+    suffix  : filename suffix (e.g. '_Re100_CentralDifference')
     """
     fig, ax = plt.subplots(figsize=(8, 7))
     cf = ax.contourf(grid_x, grid_y, p.T, levels=50, cmap="coolwarm", alpha=0.7)
@@ -170,7 +189,7 @@ def plot_streamlines(u, v, p, grid_x, grid_y):
     ax.set_aspect("equal")
     plt.tight_layout()
     os.makedirs(RESULTS_DIR, exist_ok=True)
-    fig.savefig(os.path.join(RESULTS_DIR, "streamlines.png"), dpi=150)
+    fig.savefig(os.path.join(RESULTS_DIR, f"streamlines{suffix}.png"), dpi=150)
     plt.show()
 
 
@@ -196,6 +215,7 @@ def plot_u_centreline(
     ghia_profiles: Optional[Dict[int, Dict[str, Tuple[np.ndarray, np.ndarray]]]] = None,
     ghia_reynolds: Iterable[int] = DEFAULT_GHIA_REYNOLDS,
     solver_re: Optional[float] = None,
+    suffix: str = "",
 ):
     """
     Plot u-velocity profile at x = 0.5 (vertical centreline).
@@ -239,7 +259,7 @@ def plot_u_centreline(
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     os.makedirs(RESULTS_DIR, exist_ok=True)
-    fig.savefig(os.path.join(RESULTS_DIR, "u_centreline.png"), dpi=150)
+    fig.savefig(os.path.join(RESULTS_DIR, f"u_centreline{suffix}.png"), dpi=150)
     plt.show()
 
 
@@ -250,6 +270,7 @@ def plot_v_centreline(
     ghia_profiles: Optional[Dict[int, Dict[str, Tuple[np.ndarray, np.ndarray]]]] = None,
     ghia_reynolds: Iterable[int] = DEFAULT_GHIA_REYNOLDS,
     solver_re: Optional[float] = None,
+    suffix: str = "",
 ):
     """
     Plot v-velocity profile at y = 0.5 (horizontal centreline).
@@ -293,11 +314,11 @@ def plot_v_centreline(
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     os.makedirs(RESULTS_DIR, exist_ok=True)
-    fig.savefig(os.path.join(RESULTS_DIR, "v_centreline.png"), dpi=150)
+    fig.savefig(os.path.join(RESULTS_DIR, f"v_centreline{suffix}.png"), dpi=150)
     plt.show()
 
 
-def plot_convergence(residuals):
+def plot_convergence(residuals, suffix: str = ""):
     """
     Plot continuity residual convergence history.
 
@@ -313,7 +334,7 @@ def plot_convergence(residuals):
     ax.grid(True, which="both", alpha=0.3)
     plt.tight_layout()
     os.makedirs(RESULTS_DIR, exist_ok=True)
-    fig.savefig(os.path.join(RESULTS_DIR, "convergence.png"), dpi=150)
+    fig.savefig(os.path.join(RESULTS_DIR, f"convergence{suffix}.png"), dpi=150)
     plt.show()
 
 
@@ -327,6 +348,7 @@ def plot_all(
     re: Optional[float] = None,
     ghia_reynolds: Iterable[int] = DEFAULT_GHIA_REYNOLDS,
     ghia_csv_path: Optional[str] = None,
+    convection_scheme: Optional[str] = None,
 ):
     """
     Convenience function: produce all standard plots.
@@ -339,17 +361,20 @@ def plot_all(
     re        : optional solver Reynolds number (for legend labels)
     ghia_reynolds : which Re columns from the Ghia CSV to overlay (default 100 and 400)
     ghia_csv_path : optional path to CSV; default is data/ghia_et_al_1982_tables.csv
+    convection_scheme : scheme name ('uds', 'cds', 'sou') for filename suffix
     """
+    suffix = _file_suffix(re, convection_scheme)
+
     ghia_profiles = load_ghia_centreline_profiles(
         csv_path=ghia_csv_path,
         reynolds_numbers=ghia_reynolds,
     )
 
     print("Plotting pressure and velocity field...")
-    plot_pressure_and_velocity(u, v, p, grid_x, grid_y)
+    plot_pressure_and_velocity(u, v, p, grid_x, grid_y, suffix=suffix)
 
     print("Plotting streamlines...")
-    plot_streamlines(u, v, p, grid_x, grid_y)
+    plot_streamlines(u, v, p, grid_x, grid_y, suffix=suffix)
 
     print("Plotting u centreline vs Ghia...")
     plot_u_centreline(
@@ -359,6 +384,7 @@ def plot_all(
         ghia_profiles=ghia_profiles,
         ghia_reynolds=ghia_reynolds,
         solver_re=re,
+        suffix=suffix,
     )
 
     print("Plotting v centreline vs Ghia...")
@@ -369,11 +395,12 @@ def plot_all(
         ghia_profiles=ghia_profiles,
         ghia_reynolds=ghia_reynolds,
         solver_re=re,
+        suffix=suffix,
     )
 
     if residuals is not None:
         print("Plotting convergence history...")
-        plot_convergence(residuals)
+        plot_convergence(residuals, suffix=suffix)
 
 
 # =============================================================================

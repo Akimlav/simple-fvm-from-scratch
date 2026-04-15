@@ -7,8 +7,12 @@ build/
 
 # Simulation output (regenerate with: python run_simulation.py)
 results/*.npy
+results/sweep/
 # Keep PNGs — they are shown in the README
 !results/*.png
+
+# Ghia benchmark data (regenerate or download separately)
+data/
 
 # IDE
 .vscode/
@@ -20,15 +24,6 @@ results/*.npy
 .DS_Store
 Thumbs.db
 
-# simulation outputs
-results/
-data/
-
-# python cache
-__pycache__/
-*.pyc
-
 # venv (if ever used)
 venv/
 .env/
-df/
