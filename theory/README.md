@@ -72,7 +72,7 @@ Every chapter ends with a table showing exactly which file and function implemen
 | Grid, coordinates | `solver/grid.py` |
 | Field arrays ($u$, $v$, $p$, $p'$, $b_P$) | `solver/fields.py` |
 | FVM coefficients ($a_E$, $a_P$, $D_E$, $F_e$) | `solver/discretization.py` |
-| Momentum solve → $u^*$, $v^*$ | `solver/momentum.py` |
+| Momentum solve → $u^{\ast}$, $v^{\ast}$ | `solver/momentum.py` |
 | Rhie–Chow face velocities, mass imbalance | `solver/rhie_chow.py` |
 | Pressure-correction build & solve | `solver/pressure.py` |
 | SIMPLE outer loop, velocity correction | `solver/simple.py` |

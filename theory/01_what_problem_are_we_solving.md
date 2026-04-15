@@ -113,7 +113,7 @@ For compressible flow an equation of state ($\rho = \rho(p)$) closes the system.
 This is the **pressure–velocity coupling problem**. The SIMPLE algorithm (Chapter 5) resolves it iteratively:
 
 1. **Guess** a pressure field $p$
-2. **Solve** momentum → approximate velocities $u^*$, $v^*$ (violate continuity)
+2. **Solve** momentum → approximate velocities $u^{\ast}$, $v^{\ast}$ (violate continuity)
 3. **Derive** a pressure correction $p'$ from the continuity constraint
 4. **Correct** $p$ and velocities
 5. **Repeat** until continuity is satisfied within a tolerance

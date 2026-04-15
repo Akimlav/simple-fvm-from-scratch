@@ -78,7 +78,7 @@ The net outflow term is non-negative during iteration, ensuring $a_P \geq \sum a
 
 ### Convergence Rate
 
-Gauss–Seidel converges geometrically: the error after $k$ sweeps satisfies $\|\mathbf{e}^{(k)}\| \leq \rho^k \|\mathbf{e}^{(0)}\|$ where $\rho < 1$ is the spectral radius of the iteration matrix. For the five-point Laplacian on an $N \times N$ grid:
+Gauss–Seidel converges geometrically: the error after $k$ sweeps satisfies $\|\mathbf{e}^{(k)}\| \leq \rho^{k} \|\mathbf{e}^{(0)}\|$ where $\rho < 1$ is the spectral radius of the iteration matrix. For the five-point Laplacian on an $N \times N$ grid:
 
 $$\rho \approx 1 - \frac{\pi^2}{N^2}$$
 

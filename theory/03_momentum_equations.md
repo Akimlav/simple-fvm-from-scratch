@@ -140,9 +140,9 @@ The modified central coefficient is $a_P / \alpha_u$ (larger → more diagonally
 
 Putting it all together:
 
-$$\boxed{a_P^u\,u_P^* = a_E^u\,u_E^* + a_W^u\,u_W^* + a_N^u\,u_N^* + a_S^u\,u_S^* - \frac{\Delta y}{2}(p_E - p_W) + \frac{1-\alpha_u}{\alpha_u}\,a_P^{u,0}\,u_P^{\text{old}}}$$
+$$\boxed{a_P^{u}\,u_P^{\ast} = a_E^{u}\,u_E^{\ast} + a_W^{u}\,u_W^{\ast} + a_N^{u}\,u_N^{\ast} + a_S^{u}\,u_S^{\ast} - \frac{\Delta y}{2}(p_E - p_W) + \frac{1-\alpha_u}{\alpha_u}\,a_P^{u,0}\,u_P^{\text{old}}}$$
 
-where $a_P^{u,0}$ is the unrelaxed central coefficient and $a_P^u = a_P^{u,0} / \alpha_u$.
+where $a_P^{u,0}$ is the unrelaxed central coefficient and $a_P^{u} = a_P^{u,0} / \alpha_u$.
 
 In code, this is equivalent to:
 

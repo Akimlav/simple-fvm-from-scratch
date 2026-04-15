@@ -72,7 +72,7 @@ $$A_e = A_w = \Delta y, \qquad A_n = A_s = \Delta x$$
 
 The surface integral becomes a sum over the four faces:
 
-$$\oint_S (\rho \mathbf{u}\,\phi) \cdot \hat{\mathbf{n}}\;dS \;\approx\; \underbrace{(\rho u \phi)_e\,\Delta y}_{J_e^c} - \underbrace{(\rho u \phi)_w\,\Delta y}_{J_w^c} + \underbrace{(\rho v \phi)_n\,\Delta x}_{J_n^c} - \underbrace{(\rho v \phi)_s\,\Delta x}_{J_s^c}$$
+$$\oint_S (\rho \mathbf{u}\,\phi) \cdot \hat{\mathbf{n}}\;dS \;\approx\; \underbrace{(\rho u \phi)_e\,\Delta y}_{J_e^{c}} - \underbrace{(\rho u \phi)_w\,\Delta y}_{J_w^{c}} + \underbrace{(\rho v \phi)_n\,\Delta x}_{J_n^{c}} - \underbrace{(\rho v \phi)_s\,\Delta x}_{J_s^{c}}$$
 
 The signs follow from the outward normal: $+x$ at the east face, $-x$ at the west face, $+y$ at the north face, $-y$ at the south face.
 

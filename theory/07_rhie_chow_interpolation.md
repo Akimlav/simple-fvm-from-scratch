@@ -42,9 +42,9 @@ This uses $(p_E - p_P)$: adjacent cells only, no skipping.
 
 ### Step 3: The Rhie–Chow Correction
 
-We cannot compute $\hat{u}_e$ directly (we don't have the neighbour-sum at the face). Instead, **approximate** $\hat{u}_e$ by interpolating the full cell-centre velocities $u^{*}$ and separately adding back the compact pressure gradient:
+We cannot compute $\hat{u}_e$ directly (we don't have the neighbour-sum at the face). Instead, **approximate** $\hat{u}_e$ by interpolating the full cell-centre velocities $u^{\ast}$ and separately adding back the compact pressure gradient:
 
-$$\boxed{u_e = \tfrac{1}{2}(u_P^{*} + u_E^{*}) - D_f^{e}\,(p_E - p_P)}$$
+$$\boxed{u_e = \tfrac{1}{2}(u_P^{\ast} + u_E^{\ast}) - D_f^{e}\,(p_E - p_P)}$$
 
 The first term is the naive interpolation of **predicted** velocities (which already contain the wide-stencil pressure gradient). The second term replaces that implicit wide pressure coupling with a compact one. The net effect: the face velocity responds to $(p_E - p_P)$, which **sees every cell** and kills the checkerboard.
 
@@ -68,25 +68,25 @@ Where $a_P$ is large (strong convection or diffusion), $D_f$ is small — the ve
 
 **East face** (between $P = (i,j)$ and $E = (i+1,j)$):
 
-$$u_e = \tfrac{1}{2}(u^{*}_{i,j} + u^{*}_{i+1,j}) - \tfrac{1}{2}\,\Delta y\left(\frac{1}{a_P^{i,j}} + \frac{1}{a_P^{i+1,j}}\right)(p_{i+1,j} - p_{i,j})$$
+$$u_e = \tfrac{1}{2}(u^{\ast}_{i,j} + u^{\ast}_{i+1,j}) - \tfrac{1}{2}\,\Delta y\left(\frac{1}{a_P^{i,j}} + \frac{1}{a_P^{i+1,j}}\right)(p_{i+1,j} - p_{i,j})$$
 
 $$F_e = \rho\,u_e\,\Delta y$$
 
 **West face** (between $W = (i-1,j)$ and $P = (i,j)$):
 
-$$u_w = \tfrac{1}{2}(u^{*}_{i-1,j} + u^{*}_{i,j}) - \tfrac{1}{2}\,\Delta y\left(\frac{1}{a_P^{i-1,j}} + \frac{1}{a_P^{i,j}}\right)(p_{i,j} - p_{i-1,j})$$
+$$u_w = \tfrac{1}{2}(u^{\ast}_{i-1,j} + u^{\ast}_{i,j}) - \tfrac{1}{2}\,\Delta y\left(\frac{1}{a_P^{i-1,j}} + \frac{1}{a_P^{i,j}}\right)(p_{i,j} - p_{i-1,j})$$
 
 $$F_w = \rho\,u_w\,\Delta y$$
 
 **North face** (between $P = (i,j)$ and $N = (i,j+1)$):
 
-$$v_n = \tfrac{1}{2}(v^{*}_{i,j} + v^{*}_{i,j+1}) - \tfrac{1}{2}\,\Delta x\left(\frac{1}{a_P^{i,j}} + \frac{1}{a_P^{i,j+1}}\right)(p_{i,j+1} - p_{i,j})$$
+$$v_n = \tfrac{1}{2}(v^{\ast}_{i,j} + v^{\ast}_{i,j+1}) - \tfrac{1}{2}\,\Delta x\left(\frac{1}{a_P^{i,j}} + \frac{1}{a_P^{i,j+1}}\right)(p_{i,j+1} - p_{i,j})$$
 
 $$F_n = \rho\,v_n\,\Delta x$$
 
 **South face** (between $S = (i,j-1)$ and $P = (i,j)$):
 
-$$v_s = \tfrac{1}{2}(v^{*}_{i,j-1} + v^{*}_{i,j}) - \tfrac{1}{2}\,\Delta x\left(\frac{1}{a_P^{i,j-1}} + \frac{1}{a_P^{i,j}}\right)(p_{i,j} - p_{i,j-1})$$
+$$v_s = \tfrac{1}{2}(v^{\ast}_{i,j-1} + v^{\ast}_{i,j}) - \tfrac{1}{2}\,\Delta x\left(\frac{1}{a_P^{i,j-1}} + \frac{1}{a_P^{i,j}}\right)(p_{i,j} - p_{i,j-1})$$
 
 $$F_s = \rho\,v_s\,\Delta x$$
 

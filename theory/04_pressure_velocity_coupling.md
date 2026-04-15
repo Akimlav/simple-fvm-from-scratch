@@ -88,7 +88,7 @@ We keep everything at cell centres (**simpler code**, easier to extend to unstru
 
 When computing face velocities for the continuity equation, we do **not** use naive interpolation $u_e = \frac{1}{2}(u_P + u_E)$. Instead, we add a pressure-smoothing correction:
 
-$$u_e = \tfrac{1}{2}(u_P^* + u_E^*) - D_f\,(p_E - p_P)$$
+$$u_e = \tfrac{1}{2}(u_P^{\ast} + u_E^{\ast}) - D_f\,(p_E - p_P)$$
 
 The key term is $(p_E - p_P)$: a **compact** pressure gradient that couples **adjacent** cells. If a checkerboard is present, $(p_E - p_P)$ is large, the face velocity is modified, the continuity residual becomes large, and the pressure correction eliminates the oscillation.
 
@@ -96,7 +96,7 @@ The key term is $(p_E - p_P)$: a **compact** pressure gradient that couples **ad
 
 SIMPLE handles the pressure–velocity coupling iteratively:
 
-1. **Predict** velocities $u^*, v^*$ from momentum using current $p$
+1. **Predict** velocities $u^{\ast}, v^{\ast}$ from momentum using current $p$
 2. **Check** continuity via Rhie–Chow face velocities → mass imbalance $b_P$
 3. **Solve** a pressure-correction equation to find $p'$ that drives $b_P \to 0$
 4. **Correct** $p$ and velocities
