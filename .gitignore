@@ -29,3 +29,4 @@ venv/
 .env/
 
 run_re_grid_sweep.py
+tests/
