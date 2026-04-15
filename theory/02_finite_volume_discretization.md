@@ -34,7 +34,7 @@ $$\int_V \nabla \cdot \mathbf{F}\;dV = \oint_S \mathbf{F} \cdot \hat{\mathbf{n}}
 
 Applying this to both the convective and diffusive terms:
 
-$$\underbrace{\oint_S (\rho \mathbf{u}\,\phi) \cdot \hat{\mathbf{n}}\;dS}_{\text{net convective flux out}} = \underbrace{\oint_S (\Gamma \nabla \phi) \cdot \hat{\mathbf{n}}\;dS}_{\text{net diffusive flux in}} + \underbrace{\bar{S}_\phi\,\Delta V}_{\text{source}}$$
+$$\underbrace{\oint_S (\rho \mathbf{u}\,\phi) \cdot \hat{\mathbf{n}}\;dS}_{\text{net convective flux out}} = \underbrace{\oint_S (\Gamma \nabla \phi) \cdot \hat{\mathbf{n}}\dS}_{\text{net diffusive flux in}} + \underbrace{\bar{S}_\phi\,\Delta V}_{\text{source}}$$
 
 This is **exact** — no approximation has been made yet. The key insight: we only need fluxes through the cell faces, not the full field inside each cell.
 
