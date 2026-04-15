@@ -130,7 +130,7 @@ After convergence, plots are saved to `results/` and displayed:
 
 Benchmark: Ghia, U., Ghia, K.N., & Shin, C.T. (1982). *High-Re solutions for incompressible flow using the Navier–Stokes equations and a multigrid method.* Journal of Computational Physics, **48**(3), 387–411.
 
-At Re = 100, the primary vortex centre should be near (0.617, 0.737). Centreline velocity profiles match Ghia within 2–5% on a 41×41 grid.
+At Re = 100, the primary vortex centre should be near (0.617, 0.737). Centreline velocity profiles match Ghia within 2–5% on a 129×129 grid and central difference convection scheme. With first order upwind scheme discrepancy is bigger.
 
 ---
 
