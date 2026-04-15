@@ -12,11 +12,11 @@ Chapter 4 showed that naive face interpolation $u_e = \frac{1}{2}(u_P + u_E)$ on
 
 The discretised $x$-momentum at cell $P$ can be written as:
 
-$$u_P = \frac{\sum a_{nb}\,u_{nb} + b^u}{a_P} - \frac{\Delta y}{a_P}\,\frac{p_E - p_W}{2}$$
+$$u_P = \frac{\sum a_{nb}\,u_{nb} + b^{u}}{a_P} - \frac{\Delta y}{a_P}\,\frac{p_E - p_W}{2}$$
 
 Define the "momentum without pressure" part as:
 
-$$\hat{u}_P = \frac{\sum a_{nb}\,u_{nb} + b^u}{a_P}$$
+$$\hat{u}_P = \frac{\sum a_{nb}\,u_{nb} + b^{u}}{a_P}$$
 
 so that $u_P = \hat{u}_P - \frac{\Delta y}{a_P}\,\frac{p_E - p_W}{2}$.
 
@@ -42,7 +42,7 @@ This uses $(p_E - p_P)$: adjacent cells only, no skipping.
 
 ### Step 3: The Rhie–Chow Correction
 
-We cannot compute $\hat{u}_e$ directly (we don't have the neighbour-sum at the face). Instead, **approximate** $\hat{u}_e$ by interpolating the full cell-centre velocities $u^*$ and separately adding back the compact pressure gradient:
+We cannot compute $\hat{u}_e$ directly (we don't have the neighbour-sum at the face). Instead, **approximate** $\hat{u}_e$ by interpolating the full cell-centre velocities $u^{*}$ and separately adding back the compact pressure gradient:
 
 $$\boxed{u_e = \tfrac{1}{2}(u_P^{*} + u_E^{*}) - D_f^{e}\,(p_E - p_P)}$$
 
