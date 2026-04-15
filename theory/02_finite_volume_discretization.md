@@ -23,7 +23,7 @@ $$\nabla \cdot (\rho \mathbf{u}\,\phi) = \nabla \cdot (\Gamma \nabla \phi) + S_\
 Pick a control volume $V$ with closed surface $S$. Integrate both sides over $V$:
 
 $$
-\int_V \nabla \cdot (\rho \mathbf{u}\ \phi)\dV = \int_V \nabla \cdot (\Gamma \nabla \phi)\ dV + \int_V S_\phi\ dV
+\int_V \nabla \cdot (\rho \mathbf{u}\ \phi)\ dV = \int_V \nabla \cdot (\Gamma \nabla \phi)\ dV + \int_V S_\phi\ dV
 $$
 
 ---
@@ -32,11 +32,11 @@ $$
 
 The divergence theorem converts volume integrals of divergences into surface integrals:
 
-$$\int_V \nabla \cdot \mathbf{F}\,dV = \oint_S \mathbf{F} \cdot \hat{\mathbf{n}}\;dS$$
+$$\int_V \nabla \cdot \mathbf{F}\ dV = \oint_S \mathbf{F} \cdot \hat{\mathbf{n}}\;dS$$
 
 Applying this to both the convective and diffusive terms:
 
-$$\underbrace{\oint_S (\rho \mathbf{u}\,\phi) \cdot \hat{\mathbf{n}}\;dS}_{\text{net convective flux out}} = \underbrace{\oint_S (\Gamma \nabla \phi) \cdot \hat{\mathbf{n}}\,dS}_{\text{net diffusive flux in}} + \underbrace{\bar{S}_\phi\,\Delta V}_{\text{source}}$$
+$$\underbrace{\oint_S (\rho \mathbf{u}\ \phi) \cdot \hat{\mathbf{n}}\;dS}_{\text{net convective flux out}} = \underbrace{\oint_S (\Gamma \nabla \phi) \cdot \hat{\mathbf{n}}\ dS}_{\text{net diffusive flux in}} + \underbrace{\bar{S}_\phi\,\Delta V}_{\text{source}}$$
 
 This is **exact** — no approximation has been made yet. The key insight: we only need fluxes through the cell faces, not the full field inside each cell.
 
