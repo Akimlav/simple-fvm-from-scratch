@@ -87,7 +87,8 @@ def load_ghia_centreline_profiles(
     """
     path = csv_path or _ghia_csv_path()
     if not os.path.isfile(path):
-        raise FileNotFoundError(f"Ghia benchmark CSV not found: {path}")
+        print(f"  [info] Ghia benchmark CSV not found: {path} — skipping reference data")
+        return {}
 
     res_list: List[int] = list(reynolds_numbers)
     for re in res_list:
