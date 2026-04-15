@@ -11,9 +11,6 @@ results/sweep/
 # Keep PNGs — they are shown in the README
 !results/*.png
 
-# Ghia benchmark data (regenerate or download separately)
-data/
-
 # IDE
 .vscode/
 .idea/
