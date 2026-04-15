@@ -22,7 +22,9 @@ $$\nabla \cdot (\rho \mathbf{u}\,\phi) = \nabla \cdot (\Gamma \nabla \phi) + S_\
 
 Pick a control volume $V$ with closed surface $S$. Integrate both sides over $V$:
 
-$$\int_V \nabla \cdot (\rho \mathbf{u}\,\phi)\;dV = \int_V \nabla \cdot (\Gamma \nabla \phi)\;dV + \int_V S_\phi\;dV$$
+$$
+\int_V \nabla \cdot (\rho \mathbf{u}\,\phi)\,dV = \int_V \nabla \cdot (\Gamma \nabla \phi)\,dV + \int_V S_\phi\,dV
+$$
 
 ---
 
