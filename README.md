@@ -122,7 +122,7 @@ After convergence, plots are saved to `results/` and displayed:
 | Very slow convergence | Too few pressure sweeps | Increase `gs_p` to 50 |
 | Checkerboard in pressure plot | Bug in Rhie–Chow or `au_P_arr` | Check `au_P_arr` is not all-ones |
 | Vortex not forming | Lid BC not enforced during solve | Verify `apply_velocity_bcs` is called after each G-S sweep |
-| Centreline profiles shifted from Ghia | Grid too coarse | Increase to 61×61 or 81×81 |
+| Centreline profiles shifted from Ghia | Grid too coarse | Increase to 129x129, try other discretization schemes|
 
 ---
 
@@ -130,7 +130,7 @@ After convergence, plots are saved to `results/` and displayed:
 
 Benchmark: Ghia, U., Ghia, K.N., & Shin, C.T. (1982). *High-Re solutions for incompressible flow using the Navier–Stokes equations and a multigrid method.* Journal of Computational Physics, **48**(3), 387–411.
 
-At Re = 100, the primary vortex centre should be near (0.617, 0.737). Centreline velocity profiles match Ghia within 2–5% on a 129×129 grid and central difference convection scheme. With first order upwind scheme discrepancy is bigger.
+At Re = 100, the primary vortex centre should be near (0.617, 0.737). Centreline velocity profiles match Ghia within 2–5% on a 129×129 grid and central difference discretization scheme. With first order upwind scheme discretization scheme discrepancy is bigger.
 
 ---
 
