@@ -19,3 +19,16 @@ results/*.npy
 # OS
 .DS_Store
 Thumbs.db
+
+# simulation outputs
+results/
+data/
+
+# python cache
+__pycache__/
+*.pyc
+
+# venv (if ever used)
+venv/
+.env/
+df/
