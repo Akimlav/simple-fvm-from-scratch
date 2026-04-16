@@ -34,7 +34,6 @@ This runs a lid-driven cavity simulation at Re = 100 on a 129×129 grid using ce
 simple-fvm-from-scratch/
 │
 ├── run_simulation.py          ← entry point (single case)
-├── run_re_grid_sweep.py       ← batch runner (Re × grid sweep)
 ├── requirements.txt
 │
 ├── solver/                    ← one file per concept

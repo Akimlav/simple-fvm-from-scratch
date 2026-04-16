@@ -14,9 +14,9 @@ $$\Delta x = \Delta y = \frac{L}{N - 1} = \frac{1}{N - 1}$$
 
 Node coordinates (boundary nodes included):
 
-$$x_i = i\,\Delta x, \quad i = 0, \ldots, N-1$$
+$$x_i = i\,\Delta x \quad \text{for } i = 0, \ldots, N-1$$
 
-$$y_j = j\,\Delta y, \quad j = 0, \ldots, N-1$$
+$$y_j = j\,\Delta y \quad \text{for } j = 0, \ldots, N-1$$
 
 Nodes $i = 0$ and $i = N-1$ lie on the physical walls. The interior nodes where equations are solved run $i = 1, \ldots, N-2$.
 

@@ -67,7 +67,7 @@ This is the key derivation. We need to find a pressure correction $p'$ such that
 
 Decompose the true (converged) fields into predicted + correction:
 
-$$u = u^* + u', \qquad v = v^* + v', \qquad p = p^* + p'$$
+$$u = u^* + u' \qquad v = v^* + v' \qquad p = p^* + p'$$
 
 where $p^*$ is the current pressure guess and $u^*$, $v^*$ are the momentum predictions.
 
@@ -107,17 +107,17 @@ where $a_P^{u,0}$ is the **unrelaxed** momentum central coefficient. The compact
 
 Define the **velocity-pressure sensitivity**:
 
-$$d_P^u = \frac{\Delta y}{a_P^{u,0}}, \qquad d_P^v = \frac{\Delta x}{a_P^{v,0}}$$
+$$d_P^u = \frac{\Delta y}{a_P^{u,0}} \qquad d_P^v = \frac{\Delta x}{a_P^{v,0}}$$
 
 ### 4e. Face Velocity Correction
 
 The Rhie–Chow face velocity (Chapter 7) after the pressure correction becomes:
 
-$$u_e^{\text{corrected}} = u_e^{RC} - D_f^e\,(p_E' - p_P')$$
+$$u_e^{\text{corrected}} = u_e^{RC} - D_f^{e}\,(p_E' - p_P')$$
 
 where the face coupling coefficient is:
 
-$$D_f^e = \tfrac{1}{2}\,\Delta y\left(\frac{1}{a_P^P} + \frac{1}{a_P^E}\right)$$
+$$D_f^{e} = \tfrac{1}{2}\,\Delta y\left(\frac{1}{a_P^{P}} + \frac{1}{a_P^{E}}\right)$$
 
 Similarly for all four faces (using $a_P$ from the appropriate momentum equation).
 
@@ -127,23 +127,23 @@ The corrected velocity field must satisfy continuity:
 
 $$\rho\,u_e^{\text{corr}}\,\Delta y - \rho\,u_w^{\text{corr}}\,\Delta y + \rho\,v_n^{\text{corr}}\,\Delta x - \rho\,v_s^{\text{corr}}\,\Delta x = 0$$
 
-Substitute $u_e^{\text{corr}} = u_e^{RC} - D_f^e(p_E' - p_P')$ and similarly for $w$, $n$, $s$:
+Substitute $u_e^{\text{corr}} = u_e^{RC} - D_f^{e}(p_E' - p_P')$ and similarly for $w$, $n$, $s$:
 
 $$\underbrace{\rho\,u_e^{RC}\,\Delta y - \rho\,u_w^{RC}\,\Delta y + \rho\,v_n^{RC}\,\Delta x - \rho\,v_s^{RC}\,\Delta x}_{= \;b_P\;\text{(mass imbalance from Step 3)}}$$
 
-$$- \;\rho\,\Delta y\,D_f^e\,(p_E' - p_P') + \rho\,\Delta y\,D_f^w\,(p_P' - p_W') - \rho\,\Delta x\,D_f^n\,(p_N' - p_P') + \rho\,\Delta x\,D_f^s\,(p_P' - p_S') = 0$$
+$$- \;\rho\,\Delta y\,D_f^{e}\,(p_E' - p_P') + \rho\,\Delta y\,D_f^{w}\,(p_P' - p_W') - \rho\,\Delta x\,D_f^{n}\,(p_N' - p_P') + \rho\,\Delta x\,D_f^{s}\,(p_P' - p_S') = 0$$
 
 ### 4g. Collect $p'$ Terms
 
 Define the pressure-correction coefficients:
 
-$$a_E' = \rho\,\Delta y\,D_f^e = \tfrac{1}{2}\,\rho\,\Delta y^2 \left(\frac{1}{a_P^P} + \frac{1}{a_P^E}\right)$$
+$$a_E' = \rho\,\Delta y\,D_f^{e} = \tfrac{1}{2}\,\rho\,\Delta y^2 \left(\frac{1}{a_P^{P}} + \frac{1}{a_P^{E}}\right)$$
 
-$$a_W' = \rho\,\Delta y\,D_f^w = \tfrac{1}{2}\,\rho\,\Delta y^2 \left(\frac{1}{a_P^W} + \frac{1}{a_P^P}\right)$$
+$$a_W' = \rho\,\Delta y\,D_f^{w} = \tfrac{1}{2}\,\rho\,\Delta y^2 \left(\frac{1}{a_P^{W}} + \frac{1}{a_P^{P}}\right)$$
 
-$$a_N' = \rho\,\Delta x\,D_f^n = \tfrac{1}{2}\,\rho\,\Delta x^2 \left(\frac{1}{a_P^P} + \frac{1}{a_P^N}\right)$$
+$$a_N' = \rho\,\Delta x\,D_f^{n} = \tfrac{1}{2}\,\rho\,\Delta x^2 \left(\frac{1}{a_P^{P}} + \frac{1}{a_P^{N}}\right)$$
 
-$$a_S' = \rho\,\Delta x\,D_f^s = \tfrac{1}{2}\,\rho\,\Delta x^2 \left(\frac{1}{a_P^S} + \frac{1}{a_P^P}\right)$$
+$$a_S' = \rho\,\Delta x\,D_f^{s} = \tfrac{1}{2}\,\rho\,\Delta x^2 \left(\frac{1}{a_P^{S}} + \frac{1}{a_P^{P}}\right)$$
 
 $$a_P' = a_E' + a_W' + a_N' + a_S'$$
 

@@ -32,7 +32,7 @@ The pressure gradient terms here involve $p_W$, $p_P$, $p_E$, and $p_{EE}$ — a
 
 If the momentum equation were written directly at the east face (as on a staggered grid), the pressure gradient would use the **compact** stencil:
 
-$$u_e^{\text{desired}} = \hat{u}_e - \overline{\left(\frac{\Delta y}{a_P}\right)}_e \frac{p_E - p_P}{\Delta x}\,\Delta x = \hat{u}_e - D_f^{e}\,(p_E - p_P)$$
+$$u_e^{\text{desired}} = \hat{u}_e - \left\langle \frac{\Delta y}{a_P} \right\rangle_{\!e} (p_E - p_P) = \hat{u}_e - D_f^{e}\,(p_E - p_P)$$
 
 where:
 
