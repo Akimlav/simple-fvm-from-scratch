@@ -82,7 +82,7 @@ $$a_P = \underbrace{a_E + a_W + a_N + a_S}_{\text{sum of neighbours}} + \underbr
 
 The mass fluxes $F_e, F_w, F_n, F_s$ require the velocity **at the face**, which lies between two nodes. We use **linear interpolation** of the current velocity field:
 
-$$u_e = \tfrac{1}{2}(u_P + u_E), \qquad v_n = \tfrac{1}{2}(v_P + v_N)$$
+$$u_e = \tfrac{1}{2}(u_P + u_E) \qquad v_n = \tfrac{1}{2}(v_P + v_N)$$
 
 For the $x$-momentum equation, the mass fluxes through each face are:
 

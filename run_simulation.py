@@ -32,7 +32,7 @@ import numpy as np
 from solver.grid import Grid
 from solver.fields import Fields
 from solver.boundary_conditions import apply_velocity_bcs
-from solver.convection_schemes import SCHEME_CDS, SCHEME_SOU, convection_scheme_label
+from solver.convection_schemes import SCHEME_CDS, SCHEME_SOU, SCHEME_UDS, convection_scheme_label
 from solver.simple import run_simple
 from post.plot_results import plot_all
 
@@ -80,8 +80,8 @@ print(f"Fields initialised. Lid BC: u[:, -1] = {U_lid}")
 # SOLVER SETTINGS
 # =============================================================================
 # Under-relaxation factors
-#   Momentum: 0.5 is a safe starting value for Re=100
-#   Pressure: 0.2 is conservative; increase to 0.3 if converging well
+#   Momentum: 0.7 works well for Re=100; reduce to 0.3–0.5 if diverging
+#   Pressure: 0.3 is a good default; reduce to 0.2 for tougher cases
 urf_u = 0.7   # u-momentum under-relaxation
 urf_v = 0.7   # v-momentum under-relaxation
 urf_p = 0.3   # pressure under-relaxation
@@ -96,7 +96,10 @@ n_iter = 1500
 # Convergence tolerance on max continuity residual
 tol = 1e-10
 
-# Momentum convection: SCHEME_SOU (default), SCHEME_CDS, or "uds" (CDS: low Re / fine grid)
+# Momentum convection: SCHEME_CDS (default), SCHEME_UDS, or SCHEME_SOU
+#   CDS: second-order, accurate on fine grids at moderate Re; may oscillate at high cell Peclet
+#   UDS: first-order upwind, most stable, adds numerical diffusion
+#   SOU: second-order upwind with deferred correction, stable and accurate
 convection_scheme = SCHEME_CDS
 
 print(f"\nSolver settings:")
@@ -175,7 +178,7 @@ psi_int = psi[1:-1, 1:-1]
 i_in, j_in = np.unravel_index(np.argmin(psi_int), psi_int.shape)
 i_vc, j_vc = i_in + 1, j_in + 1
 print(f"  Primary vortex centre ≈ ({grid.x[i_vc]:.3f}, {grid.y[j_vc]:.3f})  (ψ minimum, interior)")
-print(f"  (Expected near (0.5, 0.7) for Re=100, Ghia et al.)")
+print(f"  (Expected near (0.617, 0.737) for Re=100, Ghia et al.)")
 
 # =============================================================================
 # PLOT

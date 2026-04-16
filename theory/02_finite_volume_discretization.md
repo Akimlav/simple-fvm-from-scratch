@@ -68,7 +68,7 @@ Each interior node $P = (i, j)$ has four neighbours:
 
 Between $P$ and each neighbour lies a **face** (e, w, n, s). Face areas per unit depth:
 
-$$A_e = A_w = \Delta y, \qquad A_n = A_s = \Delta x$$
+$$A_e = A_w = \Delta y \qquad A_n = A_s = \Delta x$$
 
 ### From Surface Integral to Four Face Fluxes
 
@@ -88,11 +88,15 @@ $$\oint_S (\Gamma \nabla \phi) \cdot \hat{\mathbf{n}}\;dS \;\approx\; \Gamma\fra
 
 **Mass fluxes** through each face (positive in the $+x$ or $+y$ direction):
 
-$$F_e = \rho\, u_e\, \Delta y, \quad F_w = \rho\, u_w\, \Delta y, \quad F_n = \rho\, v_n\, \Delta x, \quad F_s = \rho\, v_s\, \Delta x$$
+$$F_e = \rho\, u_e\, \Delta y \qquad F_w = \rho\, u_w\, \Delta y$$
+
+$$F_n = \rho\, v_n\, \Delta x \qquad F_s = \rho\, v_s\, \Delta x$$
 
 **Diffusion conductances** (face area divided by distance between adjacent nodes):
 
-$$D_e = \Gamma\frac{\Delta y}{\Delta x}, \quad D_w = \Gamma\frac{\Delta y}{\Delta x}, \quad D_n = \Gamma\frac{\Delta x}{\Delta y}, \quad D_s = \Gamma\frac{\Delta x}{\Delta y}$$
+$$D_e = \Gamma\frac{\Delta y}{\Delta x} \qquad D_w = \Gamma\frac{\Delta y}{\Delta x}$$
+
+$$D_n = \Gamma\frac{\Delta x}{\Delta y} \qquad D_s = \Gamma\frac{\Delta x}{\Delta y}$$
 
 For a uniform grid with $\Gamma = \mu$, these are **constant** — computed once before the SIMPLE loop.
 
