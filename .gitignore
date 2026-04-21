@@ -1,3 +1,4 @@
+# Python
 y# Python
 __pycache__/
 *.py[cod]
@@ -25,5 +26,6 @@ Thumbs.db
 venv/
 .env/
 
+# Local scratch
 run_re_grid_sweep.py
 tests/

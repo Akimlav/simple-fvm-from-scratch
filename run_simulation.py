@@ -41,8 +41,9 @@ from post.plot_results import plot_all
 # =============================================================================
 rho   = 1.0     # Density              [kg/m³]
 nu    = 1e-2    # Kinematic viscosity  [m²/s]  → Re = U*L/nu = 1/0.01 = 100
-#nu  = 2.5e-3  # Uncomment for Re = 400
-# nu  = 1e-3    # Uncomment for Re = 1000 (use nx=ny=81 or larger)
+#nu = 2.5e-3   # Uncomment for Re = 400 (increase iterations to ~2000)
+
+
 mu    = nu * rho  # Dynamic viscosity  [Pa·s]
 
 U_lid = 1.0     # Lid velocity         [m/s]
@@ -55,11 +56,8 @@ print(f"Reynolds number: Re = {Re:.0f}")
 # GRID
 # =============================================================================
 # Increase nx/ny for higher accuracy (at the cost of speed).
-# 41×41  : fast, good for Re=100 validation
-# 61×61  : better for Re=400
-# 81×81  : recommended for Re=1000
-nx = 129
-ny = 129
+nx = 41
+ny = 41
 
 grid = Grid(nx=nx, ny=ny, L=L)
 print(f"Grid: {grid}")
@@ -184,5 +182,8 @@ print(f"  (Expected near (0.617, 0.737) for Re=100, Ghia et al.)")
 # PLOT
 # =============================================================================
 print("\nGenerating plots...")
+plot_all(fields.u, fields.v, fields.p, grid.x, grid.y, residuals,
+         Re=int(Re), save_dir=output_dir)
+print(f"Plots saved to '{output_dir}/*.png'")
 plot_all(fields.u, fields.v, fields.p, grid.x, grid.y, residuals, re=Re,
         convection_scheme=convection_scheme)

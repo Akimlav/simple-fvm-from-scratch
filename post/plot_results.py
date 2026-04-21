@@ -30,6 +30,32 @@ from typing import Dict, Iterable, List, Mapping, Optional, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 
+# =============================================================================
+# GHIA et al. (1982) BENCHMARK DATA
+# =============================================================================
+# Loaded from data/ directory (full tables from Ghia, Ghia & Shin 1982)
+
+# Column indices for each Reynolds number in the data files
+_RE_COLS = {100: 1, 400: 2, 1000: 3, 3200: 4, 5000: 5, 7500: 6, 10000: 7}
+
+def _data_dir():
+    """Return path to data/ directory relative to project root."""
+    return os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
+
+def load_ghia_u(Re=100):
+    """Load Ghia u-velocity centreline data for the given Re."""
+    data = np.loadtxt(os.path.join(_data_dir(), "ghia_u_centerline.txt"))
+    col = _RE_COLS[Re]
+    return data[:, 0], data[:, col]   # y, u
+
+def load_ghia_v(Re=100):
+    """Load Ghia v-velocity centreline data for the given Re."""
+    data = np.loadtxt(os.path.join(_data_dir(), "ghia_v_centerline.txt"))
+    col = _RE_COLS[Re]
+    return data[:, 0], data[:, col]   # x, v
+
+
+def plot_pressure_and_velocity(u, v, p, grid_x, grid_y, save_path=None):
 # Directory for saved figures (PNGs are committed to the repo)
 RESULTS_DIR = "results"
 
@@ -134,6 +160,7 @@ def plot_pressure_and_velocity(u, v, p, grid_x, grid_y, suffix: str = ""):
     p       : 2D pressure array
     grid_x  : 1D x-coordinate array
     grid_y  : 1D y-coordinate array
+    save_path : str or None, if given save to file instead of showing
     suffix  : filename suffix (e.g. '_Re100_CentralDifference')
     """
     X, Y = np.meshgrid(grid_x, grid_y, indexing="ij")
@@ -160,6 +187,14 @@ def plot_pressure_and_velocity(u, v, p, grid_x, grid_y, suffix: str = ""):
     ax.set_title("Pressure Field and Velocity Vectors", fontsize=13)
     ax.set_aspect("equal")
     plt.tight_layout()
+    if save_path:
+        fig.savefig(save_path, dpi=150, bbox_inches='tight')
+        plt.close(fig)
+    else:
+        plt.show()
+
+
+def plot_streamlines(u, v, p, grid_x, grid_y, save_path=None):
     os.makedirs(RESULTS_DIR, exist_ok=True)
     fig.savefig(os.path.join(RESULTS_DIR, f"pressure_velocity{suffix}.png"), dpi=150)
     plt.show()
@@ -175,6 +210,7 @@ def plot_streamlines(u, v, p, grid_x, grid_y, suffix: str = ""):
     p       : 2D pressure array
     grid_x  : 1D x-coordinate array
     grid_y  : 1D y-coordinate array
+    save_path : str or None, if given save to file instead of showing
     suffix  : filename suffix (e.g. '_Re100_CentralDifference')
     """
     fig, ax = plt.subplots(figsize=(8, 7))
@@ -189,6 +225,76 @@ def plot_streamlines(u, v, p, grid_x, grid_y, suffix: str = ""):
     ax.set_title("Streamlines", fontsize=13)
     ax.set_aspect("equal")
     plt.tight_layout()
+    if save_path:
+        fig.savefig(save_path, dpi=150, bbox_inches='tight')
+        plt.close(fig)
+    else:
+        plt.show()
+
+
+def plot_u_centreline(u, grid_x, grid_y, Re=100, save_path=None):
+    """
+    Plot u-velocity profile at x = 0.5 (vertical centreline).
+    Compares solver output to Ghia et al. (1982) benchmark.
+    """
+    nx = len(grid_x)
+    i_mid = nx // 2   # index closest to x = 0.5
+
+    u_profile = u[i_mid, :]   # u at x ~ 0.5, varying y
+
+    y_ghia, u_ghia = load_ghia_u(Re)
+
+    fig, ax = plt.subplots(figsize=(5, 7))
+    ax.plot(u_profile, grid_y, 'b-', linewidth=2, label='SIMPLE solver')
+    ax.scatter(u_ghia, y_ghia, color='k', s=50, zorder=5,
+               label=f'Ghia et al. (1982) Re={Re}')
+
+    ax.axvline(0, color='gray', linewidth=0.5)
+    ax.set_xlabel('u [m/s]', fontsize=12)
+    ax.set_ylabel('y [m]', fontsize=12)
+    ax.set_title(f'Centreline u-velocity  (x = 0.5, Re = {Re})', fontsize=12)
+    ax.legend(fontsize=10)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    if save_path:
+        fig.savefig(save_path, dpi=150, bbox_inches='tight')
+        plt.close(fig)
+    else:
+        plt.show()
+
+
+def plot_v_centreline(v, grid_x, grid_y, Re=100, save_path=None):
+    """
+    Plot v-velocity profile at y = 0.5 (horizontal centreline).
+    Compares solver output to Ghia et al. (1982) benchmark.
+    """
+    ny = len(grid_y)
+    j_mid = ny // 2   # index closest to y = 0.5
+
+    v_profile = v[:, j_mid]   # v at y ~ 0.5, varying x
+
+    x_ghia, v_ghia = load_ghia_v(Re)
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+    ax.plot(grid_x, v_profile, 'r-', linewidth=2, label='SIMPLE solver')
+    ax.scatter(x_ghia, v_ghia, color='k', s=50, zorder=5,
+               label=f'Ghia et al. (1982) Re={Re}')
+
+    ax.axhline(0, color='gray', linewidth=0.5)
+    ax.set_xlabel('x [m]', fontsize=12)
+    ax.set_ylabel('v [m/s]', fontsize=12)
+    ax.set_title(f'Centreline v-velocity  (y = 0.5, Re = {Re})', fontsize=12)
+    ax.legend(fontsize=10)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    if save_path:
+        fig.savefig(save_path, dpi=150, bbox_inches='tight')
+        plt.close(fig)
+    else:
+        plt.show()
+
+
+def plot_convergence(residuals, save_path=None):
     os.makedirs(RESULTS_DIR, exist_ok=True)
     fig.savefig(os.path.join(RESULTS_DIR, f"streamlines{suffix}.png"), dpi=150)
     plt.show()
@@ -326,6 +432,7 @@ def plot_convergence(residuals, suffix: str = ""):
     Parameters
     ----------
     residuals : list of float, max|bP| at each SIMPLE iteration
+    save_path : str or None, if given save to file instead of showing
     """
     fig, ax = plt.subplots(figsize=(8, 4))
     ax.semilogy(residuals, "k-", linewidth=1.5)
@@ -334,6 +441,15 @@ def plot_convergence(residuals, suffix: str = ""):
     ax.set_title("SIMPLE Convergence History", fontsize=12)
     ax.grid(True, which="both", alpha=0.3)
     plt.tight_layout()
+    if save_path:
+        fig.savefig(save_path, dpi=150, bbox_inches='tight')
+        plt.close(fig)
+    else:
+        plt.show()
+
+
+def plot_all(u, v, p, grid_x, grid_y, residuals=None,
+             Re=100, save_dir=None):
     os.makedirs(RESULTS_DIR, exist_ok=True)
     fig.savefig(os.path.join(RESULTS_DIR, f"convergence{suffix}.png"), dpi=150)
     plt.show()
@@ -359,6 +475,34 @@ def plot_all(
     u, v, p   : 2D arrays from solver
     grid_x, grid_y : 1D coordinate arrays
     residuals : list of convergence residuals (optional)
+    Re        : Reynolds number (for selecting Ghia data column)
+    save_dir  : str or None, if given save .png files to this directory
+    """
+    def path(name):
+        if save_dir:
+            return os.path.join(save_dir, name)
+        return None
+
+    print("Plotting pressure and velocity field...")
+    plot_pressure_and_velocity(u, v, p, grid_x, grid_y,
+                               save_path=path("pressure_velocity.png"))
+
+    print("Plotting streamlines...")
+    plot_streamlines(u, v, p, grid_x, grid_y,
+                     save_path=path("streamlines.png"))
+
+    print("Plotting u centreline vs Ghia...")
+    plot_u_centreline(u, grid_x, grid_y, Re=Re,
+                      save_path=path("u_centreline.png"))
+
+    print("Plotting v centreline vs Ghia...")
+    plot_v_centreline(v, grid_x, grid_y, Re=Re,
+                      save_path=path("v_centreline.png"))
+
+    if residuals is not None:
+        print("Plotting convergence history...")
+        plot_convergence(residuals,
+                         save_path=path("convergence.png"))
     re        : optional solver Reynolds number (for legend labels)
     ghia_reynolds : which Re columns from the Ghia CSV to overlay (default 100 and 400)
     ghia_csv_path : optional path to CSV; default is data/ghia_et_al_1982_tables.csv
@@ -419,6 +563,7 @@ if __name__ == "__main__":
             residuals = list(np.load(os.path.join(output_dir, "residuals.npy")))
         except FileNotFoundError:
             residuals = None
-        plot_all(u, v, p, grid_x, grid_y, residuals)
+        plot_all(u, v, p, grid_x, grid_y, residuals,
+                 Re=100, save_dir=output_dir)
     except FileNotFoundError:
         print("No saved results found. Run run_simulation.py first.")

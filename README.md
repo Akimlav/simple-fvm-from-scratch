@@ -4,6 +4,22 @@ A complete, from-scratch 2D incompressible Navier–Stokes solver built to teach
 
 ---
 
+## What This Is
+
+This repository implements a **lid-driven cavity** flow solver using:
+
+| Component | Method |
+|---|---|
+| Spatial discretisation | Finite Volume Method (FVM), uniform collocated Cartesian grid |
+| Pressure–velocity coupling | SIMPLE algorithm (Patankar, 1980) |
+| Checkerboard fix | Rhie–Chow interpolation |
+| Convection scheme | Upwind differencing |
+| Diffusion | Central differencing |
+| Linear solver | Gauss–Seidel iteration |
+| Language | Python 3.8+ |
+| Dependencies | `numpy`, `matplotlib` |
+
+Every equation in the `theory/` notes has a direct, named counterpart in the `solver/` code. If you see `a_P u_P = a_E u_E + ...` in a markdown file, you will find `aP`, `aE`, etc. in the corresponding Python file.
 ## Quick Start
 
 ```bash
@@ -28,11 +44,65 @@ This runs a lid-driven cavity simulation at Re = 100 on a 129×129 grid using ce
 
 ---
 
+## What This Is NOT
+
+This is a **teaching solver**, not a production CFD code. Limitations you should know about:
+
+- **Pure Python loops** — slow on grids larger than ~80x80. No vectorisation or compiled extensions.
+- **2D only** — no 3D support.
+- **Steady, incompressible, laminar** — no transient terms, no compressibility, no turbulence models.
+- **Uniform Cartesian grid** — no unstructured meshes, no local refinement.
+- **First-order upwind** — significant numerical diffusion at moderate Reynolds numbers.
+
+For production CFD, see [OpenFOAM](https://www.openfoam.com/), [SU2](https://su2code.github.io/), or [code_saturne](https://www.code-saturne.org/).
+
+---
+
 ## Repository Layout
 
 ```
 simple-fvm-from-scratch/
 │
+├── README.md                  <- you are here
+├── LICENSE                    <- MIT license
+├── requirements.txt
+├── run_simulation.py          <- entry point: runs SIMPLE, saves results
+│
+├── theory/                    <- step-by-step derivations (01–08)
+│
+├── solver/                    <- one file per concept
+│   ├── grid.py                <- mesh geometry
+│   ├── fields.py              <- field initialisation
+│   ├── discretization.py      <- FVM coefficient assembly
+│   ├── linear_solvers.py      <- Gauss-Seidel
+│   ├── momentum.py            <- u* and v* prediction
+│   ├── pressure.py            <- pressure-correction equation
+│   ├── rhie_chow.py           <- face velocity interpolation
+│   ├── simple.py              <- outer SIMPLE loop
+│   └── boundary_conditions.py <- all BCs in one place
+│
+├── data/                      <- Ghia et al. (1982) benchmark tables
+├── post/
+│   └── plot_results.py        <- visualisation + Ghia comparison
+└── results/                   <- generated plots (*.png)
+```
+
+---
+
+## How to Run
+
+```bash
+pip install -r requirements.txt
+python run_simulation.py
+```
+
+Results are saved to `results/` as `.png` plots:
+
+1. Pressure contour + velocity quiver
+2. Streamlines
+3. Centreline u-velocity vs Ghia et al. (1982) benchmark
+4. Centreline v-velocity vs Ghia et al. (1982) benchmark
+5. Convergence history
 ├── run_simulation.py          ← entry point (single case)
 ├── requirements.txt
 │
@@ -108,6 +178,33 @@ convection_scheme = SCHEME_SOU  # second-order upwind (deferred correction)
 |---|---|
 | ![Streamlines Re100](results/streamlines_Re100_CentralDifference.png) | ![Pressure Re100](results/pressure_velocity_Re100_CentralDifference.png) |
 
+## Results
+
+### Re = 100
+
+![Pressure and velocity](results/pressure_velocity_Re100_CentralDifference.png)
+
+![Streamlines](results/streamlines_Re100_CentralDifference.png)
+
+![u-velocity centreline vs Ghia](results/u_centreline_Re100_CentralDifference.png)
+
+![v-velocity centreline vs Ghia](results/v_centreline_Re100_CentralDifference.png)
+
+![Convergence history](results/convergence_Re100_CentralDifference.png)
+
+### Re = 400
+
+![Pressure and velocity](results/pressure_velocity_Re400_CentralDifference.png)
+
+![Streamlines](results/streamlines_Re400_CentralDifference.png)
+
+![u-velocity centreline vs Ghia](results/u_centreline_Re400_CentralDifference.png)
+
+![v-velocity centreline vs Ghia](results/v_centreline_Re400_CentralDifference.png)
+
+---
+
+## Validation: Ghia et al. (1982)
 | u-centreline vs Ghia | v-centreline vs Ghia |
 |---|---|
 | ![u-centreline Re100](results/u_centreline_Re100_CentralDifference.png) | ![v-centreline Re100](results/v_centreline_Re100_CentralDifference.png) |
@@ -116,6 +213,9 @@ convection_scheme = SCHEME_SOU  # second-order upwind (deferred correction)
 |---|
 | ![Convergence Re100](results/convergence_Re100_CentralDifference.png) |
 
+> Ghia, U., Ghia, K.N., & Shin, C.T. (1982). High-Re solutions for incompressible flow using the Navier-Stokes equations and a multigrid method. *Journal of Computational Physics*, **48**(3), 387-411.
+
+The full benchmark tables (Re = 100 through 10,000) are included in `data/`. At Re = 100, the primary vortex centre is near (0.617, 0.737). Our solver reproduces this vortex clearly and matches the centreline velocity profiles on a 41x41 grid.
 ### Re = 400, Central Differencing (129×129 grid)
 
 | Streamlines | Pressure + velocity |
@@ -130,6 +230,10 @@ convection_scheme = SCHEME_SOU  # second-order upwind (deferred correction)
 
 ## Troubleshooting
 
+```python
+nu = 1e-2    # Re = 100  (default, converges easily)
+nu = 2.5e-3  # Re = 400  (increase iterations to ~2000, use 61x61 grid)
+```
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | Residual diverges to infinity | Under-relaxation too aggressive | Reduce `urf_u`, `urf_v` to 0.3 |
@@ -151,6 +255,15 @@ At Re = 100, the primary vortex centre should be near (0.617, 0.737). Centreline
 ## References
 
 - Patankar, S.V. (1980). *Numerical Heat Transfer and Fluid Flow*. Hemisphere Publishing.
+- Ferziger, J.H. & Perić, M. (2002). *Computational Methods for Fluid Dynamics*. Springer.
+- Rhie, C.M. & Chow, W.L. (1983). Numerical study of the turbulent flow past an airfoil with trailing edge separation. *AIAA Journal*, 21(11), 1525–1532.
+- Ghia, U., Ghia, K.N., & Shin, C.T. (1982). High-Re solutions for incompressible flow using the Navier-Stokes equations and a multigrid method. *Journal of Computational Physics*, 48(3), 387-411.
+
+---
+
+## License
+
+MIT. See [LICENSE](LICENSE).
 - Ferziger, J.H. & Peric, M. (2002). *Computational Methods for Fluid Dynamics*. Springer.
 - Rhie, C.M. & Chow, W.L. (1983). Numerical study of the turbulent flow past an airfoil with trailing edge separation. *AIAA Journal*, **21**(11), 1525–1532.
 - Ghia, U., Ghia, K.N., & Shin, C.T. (1982). *Journal of Computational Physics*, **48**(3), 387–411.
