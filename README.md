@@ -170,40 +170,6 @@ convection_scheme = SCHEME_SOU  # second-order upwind (deferred correction)
 
 ---
 
-## Results
-
-### Re = 100, Central Differencing (129×129 grid)
-
-| Streamlines | Pressure + velocity |
-|---|---|
-| ![Streamlines Re100](results/streamlines_Re100_CentralDifference.png) | ![Pressure Re100](results/pressure_velocity_Re100_CentralDifference.png) |
-
-## Results
-
-### Re = 100
-
-![Pressure and velocity](results/pressure_velocity_Re100_CentralDifference.png)
-
-![Streamlines](results/streamlines_Re100_CentralDifference.png)
-
-![u-velocity centreline vs Ghia](results/u_centreline_Re100_CentralDifference.png)
-
-![v-velocity centreline vs Ghia](results/v_centreline_Re100_CentralDifference.png)
-
-![Convergence history](results/convergence_Re100_CentralDifference.png)
-
-### Re = 400
-
-![Pressure and velocity](results/pressure_velocity_Re400_CentralDifference.png)
-
-![Streamlines](results/streamlines_Re400_CentralDifference.png)
-
-![u-velocity centreline vs Ghia](results/u_centreline_Re400_CentralDifference.png)
-
-![v-velocity centreline vs Ghia](results/v_centreline_Re400_CentralDifference.png)
-
----
-
 ## Validation: Ghia et al. (1982)
 | u-centreline vs Ghia | v-centreline vs Ghia |
 |---|---|
