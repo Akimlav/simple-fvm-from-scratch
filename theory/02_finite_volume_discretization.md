@@ -112,7 +112,7 @@ $$\underbrace{F_e\,\phi_e - F_w\,\phi_w + F_n\,\phi_n - F_s\,\phi_s}_{\text{conv
 
 After choosing an interpolation scheme (Chapter 3 derives the upwind choice), all face values become linear combinations of $\phi_P$ and its neighbours. The equation for each cell collapses into:
 
-$$\boxed{a_P\,\phi_P = a_E\,\phi_E + a_W\,\phi_W + a_N\,\phi_N + a_S\,\phi_S + b}$$
+$$\boxed{a_P\, \phi_P = a_E \phi_E + a_W \phi_W + a_N \phi_N + a_S \phi_S + b}$$
 
 where:
 - $a_E, a_W, a_N, a_S$ are **neighbour coefficients** (contain both convection and diffusion contributions)
