@@ -104,7 +104,6 @@ simple-fvm-from-scratch/
 │   └── boundary_conditions.py <- all BCs in one place
 │
 ├── data/                      <- Ghia et al. (1982) benchmark tables
-├── tests/                     <- regression tests
 ├── post/
 │   └── plot_results.py        <- visualisation + Ghia comparison
 └── results/                   <- generated plots (*.png)
@@ -159,17 +158,29 @@ the centreline profiles match Ghia et al. within a few percent.
 
 ---
 
-## Results (Re = 100, 41x41 grid)
+## Results
 
-![Pressure and velocity](results/pressure_velocity.png)
+### Re = 100
 
-![Streamlines](results/streamlines.png)
+![Pressure and velocity](results/pressure_velocity_Re100_CentralDifference.png)
 
-![u-velocity centreline vs Ghia](results/u_centreline.png)
+![Streamlines](results/streamlines_Re100_CentralDifference.png)
 
-![v-velocity centreline vs Ghia](results/v_centreline.png)
+![u-velocity centreline vs Ghia](results/u_centreline_Re100_CentralDifference.png)
 
-![Convergence history](results/convergence.png)
+![v-velocity centreline vs Ghia](results/v_centreline_Re100_CentralDifference.png)
+
+![Convergence history](results/convergence_Re100_CentralDifference.png)
+
+### Re = 400
+
+![Pressure and velocity](results/pressure_velocity_Re400_CentralDifference.png)
+
+![Streamlines](results/streamlines_Re400_CentralDifference.png)
+
+![u-velocity centreline vs Ghia](results/u_centreline_Re400_CentralDifference.png)
+
+![v-velocity centreline vs Ghia](results/v_centreline_Re400_CentralDifference.png)
 
 ---
 

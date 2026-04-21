@@ -24,3 +24,6 @@ Thumbs.db
 # venv (if ever used)
 venv/
 .env/
+
+# Local scratch
+tests/
