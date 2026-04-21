@@ -182,8 +182,6 @@ convection_scheme = SCHEME_SOU  # second-order upwind (deferred correction)
 
 ### Re = 100
 
-![Pressure and velocity](results/pressure_velocity_Re100_CentralDifference.png)
-
 ![Streamlines](results/streamlines_Re100_CentralDifference.png)
 
 ![u-velocity centreline vs Ghia](results/u_centreline_Re100_CentralDifference.png)
@@ -193,8 +191,6 @@ convection_scheme = SCHEME_SOU  # second-order upwind (deferred correction)
 ![Convergence history](results/convergence_Re100_CentralDifference.png)
 
 ### Re = 400
-
-![Pressure and velocity](results/pressure_velocity_Re400_CentralDifference.png)
 
 ![Streamlines](results/streamlines_Re400_CentralDifference.png)
 
