@@ -1,171 +1,200 @@
 # 05 — The SIMPLE Algorithm
 
-## The Big Picture (Plain English)
+## The Big Picture
 
-Before the maths: here is what SIMPLE actually does in one sentence.
+Before the derivation, here is what SIMPLE does in plain language:
 
-**You guess the pressure, use it to compute velocities, check how much mass
-is being created or destroyed in each cell, then adjust the pressure to fix
-it. Repeat until mass is conserved everywhere.**
+> **Guess a pressure field. Use it to compute velocities. Check how much mass is being created or destroyed in each cell. Adjust the pressure to fix it. Repeat until mass is conserved everywhere.**
 
-That's it. The rest of this chapter is just making that loop precise.
-
-The key insight is that you don't need to solve for pressure and velocity
-simultaneously. You can alternate: fix pressure → solve velocity → fix pressure
-→ solve velocity → ... and this iteration converges to the correct answer.
+The name stands for **Semi-Implicit Method for Pressure-Linked Equations** (Patankar & Spalding, 1972). "Semi-implicit" because the pressure–velocity coupling is handled iteratively rather than simultaneously.
 
 ---
 
 ## Why We Need SIMPLE
 
-After discretization we have:
-- 2 momentum equations (for u and v) containing pressure p
-- 1 continuity equation containing u and v
+After discretisation we have:
+- 2 momentum equations (for $u$ and $v$), each containing $\nabla p$
+- 1 continuity equation, containing $u$ and $v$ but **not** $p$
 
-If we knew p exactly, we could solve momentum directly.
-If we knew u and v exactly, we could derive p from continuity.
-We know neither. SIMPLE breaks this circular dependency iteratively.
+If we knew $p$ exactly, we could solve momentum directly. If we knew $u$ and $v$ exactly, we could derive $p$ from continuity. We know neither. **SIMPLE breaks this circular dependency** through a predictor–corrector iteration.
 
 ---
 
 ## Algorithm Overview
 
 ```
-Initialize: u = v = 0,  p = 0
+Initialise:  u = v = p = 0
 
-LOOP until convergence:
-  Step 1: Solve u-momentum  →  u*   (using current p, which may be wrong)
-  Step 2: Solve v-momentum  →  v*   (using current p, which may be wrong)
-  Step 3: Compute mass imbalance bP using Rhie-Chow face velocities
-  Step 4: Solve pressure-correction equation  →  p'
-  Step 5: Correct pressure:   p  ← p + α_p * p'
-  Step 6: Correct velocities: u  ← u* + correction from p'
-                               v  ← v* + correction from p'
-  Check: max|bP| < tolerance?  → STOP
+REPEAT until convergence:
+  Step 1:  Solve u-momentum with current p     →  u*    (predicted)
+  Step 2:  Solve v-momentum with current p     →  v*    (predicted)
+  Step 3:  Compute mass imbalance bP via Rhie–Chow face velocities
+  Step 4:  Build and solve pressure-correction equation  →  p'
+  Step 5:  Correct pressure:    p  ←  p + α_p · p'
+  Step 6:  Correct velocities:  u  ←  u* + velocity correction from p'
+  Step 7:  Check convergence:   max|bP| < tolerance?  →  STOP
 ```
 
-u* and v* are called "predicted" velocities — they satisfy momentum but NOT
-continuity. Steps 4–6 fix that. bP (the mass imbalance) is the measure of
-how wrong the velocities currently are.
+$u^*$ and $v^*$ are called **predicted** velocities — they satisfy momentum but **not** continuity. Steps 3–6 fix the continuity violation. $b_P$ is the mass imbalance: the measure of how far the velocity field is from being divergence-free.
 
 ---
 
-## Step 1 & 2: Predictor (Momentum Solve)
+## Steps 1–2: Momentum Prediction
 
-Solve with **current pressure** (which may be wrong):
+Solve the momentum equations from Chapter 3 with the **current** (possibly wrong) pressure field:
 
-```
-a_P * u*_P = Σ a_nb * u*_nb  -  dy * (p[i+1,j] - p[i-1,j]) / 2
-```
+$$a_P^u\,u_P^* = \sum a_{nb}^u\,u_{nb}^* + b^u(p)$$
 
-u* does NOT satisfy continuity — that's expected at this stage.
-We store `a_P` values as `au_P_arr[i,j]` for use in Steps 4 and 6.
+This gives predicted velocities $u^*$, $v^*$ that satisfy momentum but generally violate continuity. We store the **unrelaxed** central coefficient $a_P^{u,0}$ (before under-relaxation) in `au_P_arr` — it will be needed in every subsequent step.
 
 ---
 
 ## Step 3: Mass Imbalance
 
-Using Rhie-Chow face velocities (Chapter 7), compute for each cell:
+Using Rhie–Chow face velocities (Chapter 7), compute the mass flux through each face of every cell and measure the continuity residual:
 
-```
-bP[i,j] = ρ(u_e - u_w)*dy + ρ(v_n - v_s)*dx
-```
+$$b_P = \rho\,u_e\,\Delta y - \rho\,u_w\,\Delta y + \rho\,v_n\,\Delta x - \rho\,v_s\,\Delta x$$
 
-This is the continuity residual. At convergence bP → 0 everywhere.
-The sign convention: positive bP means MORE mass is entering the cell than
-leaving — continuity is violated, pressure needs to increase there.
+This is the **net mass outflow** from cell $(i,j)$. At convergence $b_P \to 0$ everywhere.
 
 ---
 
-## Step 4: Pressure-Correction Equation
+## Step 4: Derivation of the Pressure-Correction Equation
 
-**Derivation from first principles:**
+This is the key derivation. We need to find a pressure correction $p'$ such that the corrected velocities satisfy continuity.
 
-Define corrected fields:
-```
-u = u* + u'
-p = p* + p'
-```
+### 4a. Define Correction Fields
 
-The velocity correction comes from the momentum equation difference
-(corrected minus predicted). For the u-correction:
+Decompose the true (converged) fields into predicted + correction:
 
-```
-a_P * u' = - dy * (p'[i+1,j] - p'[i,j])   ← compact gradient
-```
+$$u = u^* + u' \qquad v = v^* + v' \qquad p = p^* + p'$$
 
-Solving for u':
-```
-u'_P = -(dy / a_P) * (p'_E - p'_P)
-```
+where $p^*$ is the current pressure guess and $u^*$, $v^*$ are the momentum predictions.
 
-We define:
-```
-d_u = dy / a_P     [velocity sensitivity to pressure change]
-```
+### 4b. Velocity Correction from Momentum
 
-So:
-```
-u = u* - d_u * (p'_E - p'_P)
-v = v* - d_v * (p'_N - p'_P),   where d_v = dx / a_P
-```
+The momentum equation for the **true** velocity:
 
-**Building the p' equation:**
+$$a_P\,u_P = \sum a_{nb}\,u_{nb} + b - \frac{\Delta y}{2}(p_E - p_W)$$
 
-Substitute the corrected face velocities into continuity and collect p' terms:
+The momentum equation for the **predicted** velocity (same coefficients, same old pressure $p^*$):
 
-```
-a_E' p'_E + a_W' p'_W + a_N' p'_N + a_S' p'_S - a_P' p'_P = bP
-```
+$$a_P\,u_P^* = \sum a_{nb}\,u_{nb}^* + b - \frac{\Delta y}{2}(p_E^* - p_W^*)$$
 
-Where:
-```
-a_E' = ρ dy² * 0.5 * (1/a_P[i,j] + 1/a_P[i+1,j])
-a_W' = ρ dy² * 0.5 * (1/a_P[i-1,j] + 1/a_P[i,j])
-a_N' = ρ dx² * 0.5 * (1/a_P[i,j] + 1/a_P[i,j+1])
-a_S' = ρ dx² * 0.5 * (1/a_P[i,j-1] + 1/a_P[i,j])
-a_P' = a_E' + a_W' + a_N' + a_S'
-```
+Subtract:
 
-This is a **Poisson equation** for p'. It is solved by Gauss-Seidel (Chapter 6).
-The source term bP on the right-hand side is what "drives" the correction —
-larger mass imbalance means a larger pressure correction is needed.
+$$a_P\,u_P' = \sum a_{nb}\,u_{nb}' - \frac{\Delta y}{2}(p_E' - p_W')$$
+
+### 4c. The SIMPLE Approximation
+
+The term $\sum a_{nb}\,u_{nb}'$ contains the velocity corrections at all neighbouring cells. SIMPLE **drops this term**, assuming that neighbour corrections are small:
+
+$$a_P\,u_P' \approx -\frac{\Delta y}{2}(p_E' - p_W')$$
+
+This is what makes SIMPLE "semi-implicit" — the neighbour coupling is neglected in the correction step. The approximation is recovered through outer iterations.
+
+> **Note:** This approximation is why SIMPLE converges iteratively rather than in one step. Methods like SIMPLEC modify this approximation for faster convergence.
+
+### 4d. Cell-Centre Velocity Correction
+
+For the velocity correction applied at the cell centre, SIMPLE uses the **compact** pressure gradient (adjacent cells, not the wide stencil):
+
+$$\boxed{u_P' = -\frac{\Delta y}{a_P^{u,0}}\,(p_E' - p_P')}$$
+
+$$\boxed{v_P' = -\frac{\Delta x}{a_P^{v,0}}\,(p_N' - p_P')}$$
+
+where $a_P^{u,0}$ is the **unrelaxed** momentum central coefficient. The compact gradient is used (rather than the wide stencil from momentum) for **consistency with the Rhie–Chow face velocity** — this consistency is critical for convergence.
+
+Define the **velocity-pressure sensitivity**:
+
+$$d_P^u = \frac{\Delta y}{a_P^{u,0}} \qquad d_P^v = \frac{\Delta x}{a_P^{v,0}}$$
+
+### 4e. Face Velocity Correction
+
+The Rhie–Chow face velocity (Chapter 7) after the pressure correction becomes:
+
+$$u_e^{\text{corrected}} = u_e^{RC} - D_f^{e}\,(p_E' - p_P')$$
+
+where the face coupling coefficient is:
+
+$$D_f^{e} = \tfrac{1}{2}\,\Delta y\left(\frac{1}{a_P^{P}} + \frac{1}{a_P^{E}}\right)$$
+
+Similarly for all four faces (using $a_P$ from the appropriate momentum equation).
+
+### 4f. Substitute into Continuity
+
+The corrected velocity field must satisfy continuity:
+
+$$\rho\,u_e^{\text{corr}}\,\Delta y - \rho\,u_w^{\text{corr}}\,\Delta y + \rho\,v_n^{\text{corr}}\,\Delta x - \rho\,v_s^{\text{corr}}\,\Delta x = 0$$
+
+Substitute $u_e^{\text{corr}} = u_e^{RC} - D_f^{e}(p_E' - p_P')$ and similarly for $w$, $n$, $s$:
+
+$$\underbrace{\rho\,u_e^{RC}\,\Delta y - \rho\,u_w^{RC}\,\Delta y + \rho\,v_n^{RC}\,\Delta x - \rho\,v_s^{RC}\,\Delta x}_{= \;b_P\;\text{(mass imbalance from Step 3)}}$$
+
+$$- \;\rho\,\Delta y\,D_f^{e}\,(p_E' - p_P') + \rho\,\Delta y\,D_f^{w}\,(p_P' - p_W') - \rho\,\Delta x\,D_f^{n}\,(p_N' - p_P') + \rho\,\Delta x\,D_f^{s}\,(p_P' - p_S') = 0$$
+
+### 4g. Collect $p'$ Terms
+
+Define the pressure-correction coefficients:
+
+$$a_E' = \rho\,\Delta y\,D_f^{e} = \tfrac{1}{2}\,\rho\,\Delta y^2 \left(\frac{1}{a_P^{P}} + \frac{1}{a_P^{E}}\right)$$
+
+$$a_W' = \rho\,\Delta y\,D_f^{w} = \tfrac{1}{2}\,\rho\,\Delta y^2 \left(\frac{1}{a_P^{W}} + \frac{1}{a_P^{P}}\right)$$
+
+$$a_N' = \rho\,\Delta x\,D_f^{n} = \tfrac{1}{2}\,\rho\,\Delta x^2 \left(\frac{1}{a_P^{P}} + \frac{1}{a_P^{N}}\right)$$
+
+$$a_S' = \rho\,\Delta x\,D_f^{s} = \tfrac{1}{2}\,\rho\,\Delta x^2 \left(\frac{1}{a_P^{S}} + \frac{1}{a_P^{P}}\right)$$
+
+$$a_P' = a_E' + a_W' + a_N' + a_S'$$
+
+The **pressure-correction equation**:
+
+$$\boxed{a_P'\,p_P' = a_E'\,p_E' + a_W'\,p_W' + a_N'\,p_N' + a_S'\,p_S' - b_P}$$
+
+This is a **Poisson-type equation** for $p'$, driven by the mass imbalance $b_P$. Where $b_P$ is large (big continuity violation), $p'$ is large (big pressure correction needed). It is solved by Gauss–Seidel (Chapter 6).
+
+> **Key observation:** The coefficients $a_E', a_W', \ldots$ involve $1/a_P$ from momentum. Large momentum coefficients (strong convection or diffusion) mean weak velocity response to pressure → small pressure-correction coefficients → pressure correction produces small velocity changes. This is physically correct: in regions of strong flow, it is harder to redirect the velocity.
 
 ---
 
 ## Step 5: Pressure Correction
 
-```
-p ← p + α_p * p'
-```
+$$p \;\leftarrow\; p + \alpha_p \cdot p'$$
 
-α_p is typically 0.1–0.3. Smaller values are more stable but slower.
-We subtract the mean of p' first to fix the pressure reference level.
+The under-relaxation factor $\alpha_p$ (typically 0.1–0.3) prevents overshooting. We also **subtract the mean** of $p'$ before applying it, to fix the pressure reference level (Chapter 8 explains why).
 
 ---
 
 ## Step 6: Velocity Correction
 
-```
-u[i,j] = u*[i,j] - (dy / au_P_arr[i,j]) * (p'[i+1,j] - p'[i,j])
-v[i,j] = v*[i,j] - (dx / av_P_arr[i,j]) * (p'[i,j+1] - p'[i,j])
-```
+$$u_{i,j} = u_{i,j}^* - \frac{\Delta y}{a_P^{u,0}[i,j]}\,(p'_{i+1,j} - p'_{i,j})$$
 
-Note: **compact gradient** (adjacent cells), NOT the wide stencil used in momentum.
-This is consistent with Rhie-Chow — consistency is critical for convergence.
+$$v_{i,j} = v_{i,j}^* - \frac{\Delta x}{a_P^{v,0}[i,j]}\,(p'_{i,j+1} - p'_{i,j})$$
+
+Note: these use the **compact gradient** (adjacent cells $p'_E - p'_P$), consistent with the Rhie–Chow face velocity. Using the wide stencil here would break the consistency and prevent convergence.
 
 ---
 
-## Under-Relaxation Summary
+## Under-Relaxation
 
-| Variable | Factor | Typical value | Effect of reducing |
+| Variable | Factor | Typical range | Effect of reducing |
 |---|---|---|---|
-| u, v (momentum) | α_u, α_v | 0.3–0.7 | More stable, slower |
-| p (pressure) | α_p | 0.1–0.3 | More stable, slower |
+| $u$, $v$ | $\alpha_u$, $\alpha_v$ | 0.3–0.7 | More stable, slower convergence |
+| $p$ | $\alpha_p$ | 0.1–0.3 | More stable, slower convergence |
 
-Without under-relaxation, SIMPLE diverges for almost all problems. The factors
-slow down the update, preventing large oscillations between iterations.
-A rule of thumb: `α_u + α_p ≈ 1` (Patankar's suggestion).
+A useful rule of thumb (Patankar): $\alpha_u + \alpha_p \approx 1$.
+
+Without under-relaxation, SIMPLE diverges for almost all problems. The factors slow down the update at each iteration, preventing large oscillations between successive pressure guesses.
+
+---
+
+## Convergence Check
+
+The natural convergence measure is the maximum mass imbalance:
+
+$$\text{residual} = \max_{i,j} |b_P[i,j]|$$
+
+When this falls below the tolerance (e.g. $10^{-5}$), continuity is satisfied everywhere and the iteration stops. Early iterations may show non-monotonic residuals — this is normal while the pressure field develops from zero.
 
 ---
 
@@ -174,8 +203,10 @@ A rule of thumb: `α_u + α_p ≈ 1` (Patankar's suggestion).
 | Concept | File | Function |
 |---|---|---|
 | Full SIMPLE loop | `solver/simple.py` | `run_simple()` |
-| Predictor step | `solver/momentum.py` | `solve_u_star`, `solve_v_star` |
-| p' equation build | `solver/pressure.py` | `build_pressure_correction_coeffs` |
-| p' solve | `solver/pressure.py` | `solve_pressure_correction` |
+| Momentum prediction | `solver/momentum.py` | `solve_u_star`, `solve_v_star` |
+| Mass imbalance $b_P$ | `solver/rhie_chow.py` | `compute_face_velocity_rhie_chow` |
+| $p'$ equation coefficients | `solver/pressure.py` | `build_pressure_correction_coeffs` |
+| $p'$ solve | `solver/pressure.py` | `solve_pressure_correction` |
+| Pressure update | `solver/pressure.py` | `correct_pressure` |
 | Velocity correction | `solver/simple.py` | `correct_velocities` |
-| d_u, d_v | `solver/simple.py` | `dy/au_P_arr[i,j]` |
+| $d_u = \Delta y / a_P$ | `solver/simple.py` | `dy / au_P_arr[i,j]` |

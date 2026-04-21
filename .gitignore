@@ -1,4 +1,5 @@
 # Python
+y# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -26,4 +27,5 @@ venv/
 .env/
 
 # Local scratch
+run_re_grid_sweep.py
 tests/

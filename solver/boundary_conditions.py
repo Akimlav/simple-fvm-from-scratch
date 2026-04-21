@@ -7,10 +7,11 @@ Theory reference: theory/08_lid_driven_cavity_setup.md
 
 VELOCITY (Dirichlet conditions)
 ---------------------------------
-  Top wall (j = -1, y = L): u = U_lid, v = 0   ← moving lid
   Bottom wall (j = 0):       u = 0,    v = 0   ← no-slip
   Left wall  (i = 0):        u = 0,    v = 0   ← no-slip
   Right wall (i = -1):       u = 0,    v = 0   ← no-slip
+  Top wall (j = -1, y = L): u = U_lid, v = 0   ← moving lid (applied last so
+                              corners (0,L) and (L,L) have u = U_lid)
 
 PRESSURE CORRECTION (Neumann conditions)
 ------------------------------------------
@@ -43,10 +44,7 @@ def apply_velocity_bcs(u: np.ndarray, v: np.ndarray, U_lid: float) -> None:
     u[:, 0] = 0.0
     v[:, 0] = 0.0
 
-    # Top wall (y = L, j = -1): MOVING LID
-    u[:, -1] = U_lid   # horizontal velocity = U_lid
-    v[:, -1] = 0.0     # no penetration normal to wall
-
+    # Side walls before lid so top corners keep u = U_lid (not overwritten by u[0,:]=0)
     # Left wall (x = 0, i = 0): no-slip
     u[0, :] = 0.0
     v[0, :] = 0.0
@@ -54,6 +52,10 @@ def apply_velocity_bcs(u: np.ndarray, v: np.ndarray, U_lid: float) -> None:
     # Right wall (x = L, i = -1): no-slip
     u[-1, :] = 0.0
     v[-1, :] = 0.0
+
+    # Top wall (y = L, j = -1): MOVING LID — apply last
+    u[:, -1] = U_lid
+    v[:, -1] = 0.0
 
 
 def apply_pressure_neumann_bcs(p_prime: np.ndarray) -> None:

@@ -34,6 +34,7 @@ The coefficient dy/a_P is what we called d_u in theory/05.
 import numpy as np
 from solver.grid import Grid
 from solver.fields import Fields
+from solver.convection_schemes import ConvectionSchemeName, convection_scheme_label
 from solver.momentum import solve_u_star, solve_v_star
 from solver.rhie_chow import compute_face_velocity_rhie_chow
 from solver.pressure import (build_pressure_correction_coeffs,
@@ -94,7 +95,8 @@ def run_simple(fields: Fields, grid: Grid,
                gs_mom: int, gs_p: int,
                n_iter: int, U_lid: float,
                print_every: int = 10,
-               tol: float = 1e-5) -> list:
+               tol: float = 1e-5,
+               convection_scheme: ConvectionSchemeName = "sou") -> list:
     """
     Run the SIMPLE algorithm for n_iter outer iterations.
 
@@ -113,11 +115,14 @@ def run_simple(fields: Fields, grid: Grid,
     U_lid      : lid velocity [m/s]
     print_every: print residual every N iterations
     tol        : convergence tolerance on max continuity residual
+    convection_scheme : 'uds', 'cds' (central differencing), or 'sou' (second-order upwind)
 
     Returns
     -------
     residuals : list of float, max(|bP|) at each iteration
     """
+    _ = convection_scheme_label(convection_scheme)  # validate name once
+
     residuals = []
 
     for n in range(n_iter):
@@ -130,13 +135,15 @@ def run_simple(fields: Fields, grid: Grid,
         # ------------------------------------------------------------------
         # Solves: a_P u* = Σ a_nb u*_nb - dy*(p[i+1,j]-p[i-1,j])/2
         # Stores au_P_arr for use in Steps 3, 4, 7
-        solve_u_star(fields, grid, rho, mu, urf_u, gs_mom, U_lid)
+        solve_u_star(fields, grid, rho, mu, urf_u, gs_mom, U_lid,
+                     convection_scheme=convection_scheme)
 
         # ------------------------------------------------------------------
         # STEP 2: Solve v-momentum → v*
         # ------------------------------------------------------------------
         # Same structure as u-momentum, y-direction
-        solve_v_star(fields, grid, rho, mu, urf_v, gs_mom, U_lid)
+        solve_v_star(fields, grid, rho, mu, urf_v, gs_mom, U_lid,
+                     convection_scheme=convection_scheme)
 
         # ------------------------------------------------------------------
         # STEP 3: Compute mass imbalance via Rhie-Chow face velocities
@@ -144,8 +151,9 @@ def run_simple(fields: Fields, grid: Grid,
         # bP[i,j] = F_e - F_w + F_n - F_s  (Rhie-Chow corrected fluxes)
         compute_face_velocity_rhie_chow(fields, grid, rho)
 
-        # Track continuity residual
-        max_residual = np.max(np.abs(fields.bP))
+        # Continuity residual from Rhie–Chow fluxes of u*, v* (before p' / velocity
+        # correction this iteration). Same definition as theory/05 § Convergence.
+        max_residual = np.max(np.abs(fields.bP[1:-1, 1:-1]))
         residuals.append(max_residual)
 
         if n % print_every == 0 or n == n_iter - 1:

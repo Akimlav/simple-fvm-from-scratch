@@ -1,149 +1,112 @@
 # 07 — Rhie–Chow Interpolation
 
-## The Checkerboard Problem
+## The Problem Recap
 
-On a collocated grid, the pressure gradient in the u-momentum equation is:
-
-```
-∂p/∂x |_P ≈ (p[i+1,j] - p[i-1,j]) / (2 dx)
-```
-
-This is a **wide stencil** — cell P couples to cells i+1 and i-1, skipping
-its immediate neighbour. Consider this pressure field:
-
-```
-index:   0    1    2    3    4
-p:      100   0  100   0  100
-```
-
-The gradient at index 2: (p[3] - p[1]) / (2dx) = (0 - 0) / (2dx) = **0**
-
-The momentum equation sees **zero pressure gradient** even though the pressure
-field is wildly oscillating! This means the checkerboard pressure satisfies
-the discrete momentum equations — physically wrong.
-
-Now consider the continuity equation with naive face interpolation:
-
-```
-u_e = (u_P + u_E) / 2
-```
-
-Substituting into ∂u/∂x + ∂v/∂y = 0 for a 1D example:
-
-```
-(u_e - u_w) / dx = ((u[i+1] + u[i])/2 - (u[i] + u[i-1])/2) / dx
-                 = (u[i+1] - u[i-1]) / (2 dx)
-```
-
-Again a wide stencil — coupling alternating cells. The checkerboard velocity
-field also satisfies the discrete continuity equation. Both equations have
-the same flaw.
+Chapter 4 showed that naive face interpolation $u_e = \frac{1}{2}(u_P + u_E)$ on a collocated grid produces a wide-stencil continuity equation that cannot detect checkerboard pressure. This chapter derives the Rhie–Chow correction that fixes it.
 
 ---
 
-## Rhie–Chow: The Fix
+## Deriving the Rhie–Chow Face Velocity
 
-Rhie & Chow (1983) proposed correcting the face velocity by adding a term
-that introduces a **compact** (adjacent-cell) pressure coupling:
+### Starting Point: The Momentum Equation at Cell Centres
 
-```
-u_e = avg(u*_P, u*_E)  -  D_f * (p_E - p_P)
-```
+The discretised $x$-momentum at cell $P$ can be written as:
 
-Where:
-```
-D_f = 0.5 * (dy/a_P[i,j] + dy/a_P[i+1,j])
-```
+$$u_P = \frac{\sum a_{nb}\,u_{nb} + b^u}{a_P} - \frac{\Delta y}{a_P}\,\frac{p_E - p_W}{2}$$
 
-Let's understand each part:
+Define the "momentum without pressure" part as:
 
-**Term 1: `avg(u*_P, u*_E)`**
-The standard linear interpolation — same as naive approach.
+$$\hat{u}_P = \frac{\sum a_{nb}\,u_{nb} + b^u}{a_P}$$
 
-**Term 2: `-D_f * (p_E - p_P)`**
-A pressure-smoothing correction.
-- Uses `(p_E - p_P)` — **compact gradient**, adjacent cells only
-- The coefficient `D_f = dy/a_P` comes from the momentum equation structure:
-  `u' = -(dy/a_P) * p'` (see Chapter 5)
+so that $u_P = \hat{u}_P - \frac{\Delta y}{a_P}\,\frac{p_E - p_W}{2}$.
 
----
+### Step 1: Naive Interpolation
 
-## Why Does D_f = dy/a_P?
+Linear interpolation to the east face gives:
 
-From the momentum equation derivation:
+$$u_e^{\text{naive}} = \tfrac{1}{2}(u_P + u_E) = \tfrac{1}{2}(\hat{u}_P + \hat{u}_E) - \tfrac{1}{2}\left(\frac{\Delta y}{a_P^{P}}\,\frac{p_E - p_W}{2} + \frac{\Delta y}{a_P^{E}}\,\frac{p_{EE} - p_P}{2}\right)$$
 
-```
-a_P * u_P = Σ a_nb u_nb + b - dy * (p_E - p_W) / 2
-```
+The pressure gradient terms here involve $p_W$, $p_P$, $p_E$, and $p_{EE}$ — a **wide stencil** that skips cells and allows checkerboarding.
 
-If we imagine applying a small pressure correction δp, the velocity response is:
+### Step 2: What the Face Velocity *Should* Look Like
 
-```
-a_P * δu = -dy * δp  →  δu = -(dy/a_P) * δp
-```
+If the momentum equation were written directly at the east face (as on a staggered grid), the pressure gradient would use the **compact** stencil:
 
-So `dy/a_P` is the **velocity sensitivity to pressure change** at cell P.
-Rhie-Chow uses this physical quantity as the face interpolation correction.
+$$u_e^{\text{desired}} = \hat{u}_e - \left\langle \frac{\Delta y}{a_P} \right\rangle_{\!e} (p_E - p_P) = \hat{u}_e - D_f^{e}\,(p_E - p_P)$$
 
-At the east face (between P and E), we average the sensitivities:
+where:
 
-```
-D_f = 0.5 * (dy/a_P[i,j] + dy/a_P[i+1,j])
-    = 0.5 * dy * (1/a_P[i,j] + 1/a_P[i+1,j])
-```
+$$D_f^{e} = \tfrac{1}{2}\left(\frac{\Delta y}{a_P^{P}} + \frac{\Delta y}{a_P^{E}}\right) = \tfrac{1}{2}\,\Delta y\left(\frac{1}{a_P^{P}} + \frac{1}{a_P^{E}}\right)$$
+
+This uses $(p_E - p_P)$: adjacent cells only, no skipping.
+
+### Step 3: The Rhie–Chow Correction
+
+We cannot compute $\hat{u}_e$ directly (we don't have the neighbour-sum at the face). Instead, **approximate** $\hat{u}_e$ by interpolating the full cell-centre velocities $u^{\ast}$ and separately adding back the compact pressure gradient:
+
+$$\boxed{u_e = \tfrac{1}{2}(u_P^{\ast} + u_E^{\ast}) - D_f^{e}\,(p_E - p_P)}$$
+
+The first term is the naive interpolation of **predicted** velocities (which already contain the wide-stencil pressure gradient). The second term replaces that implicit wide pressure coupling with a compact one. The net effect: the face velocity responds to $(p_E - p_P)$, which **sees every cell** and kills the checkerboard.
 
 ---
 
-## Full Rhie–Chow Face Velocity Formulas
+## Physical Meaning of $D_f$
 
-**East face** (between cell P=(i,j) and E=(i+1,j)):
-```
-u_e = 0.5*(u*[i,j] + u*[i+1,j])
-    - 0.5*dy * (1/aP[i,j] + 1/aP[i+1,j]) * (p[i+1,j] - p[i,j])
-F_e = ρ * u_e * dy
-```
+From the momentum equation, a small pressure change $\delta p$ produces a velocity change:
 
-**West face** (between W=(i-1,j) and P=(i,j)):
-```
-u_w = 0.5*(u*[i-1,j] + u*[i,j])
-    - 0.5*dy * (1/aP[i-1,j] + 1/aP[i,j]) * (p[i,j] - p[i-1,j])
-F_w = ρ * u_w * dy
-```
+$$a_P\,\delta u = -\Delta y\,\delta p \quad\Longrightarrow\quad \delta u = -\frac{\Delta y}{a_P}\,\delta p$$
 
-**North face** (between P=(i,j) and N=(i,j+1)):
-```
-v_n = 0.5*(v*[i,j] + v*[i,j+1])
-    - 0.5*dx * (1/aP[i,j] + 1/aP[i,j+1]) * (p[i,j+1] - p[i,j])
-F_n = ρ * v_n * dx
-```
+So $\Delta y / a_P$ is the **velocity sensitivity to pressure** at a cell centre. At the face, we average the sensitivities from both sides:
 
-**South face** (between S=(i,j-1) and P=(i,j)):
-```
-v_s = 0.5*(v*[i,j-1] + v*[i,j])
-    - 0.5*dx * (1/aP[i,j-1] + 1/aP[i,j]) * (p[i,j] - p[i,j-1])
-F_s = ρ * v_s * dx
-```
+$$D_f^{e} = \tfrac{1}{2}\,\Delta y\left(\frac{1}{a_P^{P}} + \frac{1}{a_P^{E}}\right)$$
 
-**Mass imbalance (continuity residual):**
-```
-bP[i,j] = F_e - F_w + F_n - F_s
-```
+Where $a_P$ is large (strong convection or diffusion), $D_f$ is small — the velocity barely responds to pressure changes. Where $a_P$ is small, $D_f$ is large — pressure has a strong effect. This is physically correct.
 
 ---
 
-## Consistency Requirement
+## All Four Face Velocities
 
-The pressure-correction equation coefficients (Chapter 5) are:
+**East face** (between $P = (i,j)$ and $E = (i+1,j)$):
 
-```
-a_E' = ρ dy² * 0.5 * (1/a_P[i,j] + 1/a_P[i+1,j])
-```
+$$u_e = \tfrac{1}{2}(u^{\ast}_{i,j} + u^{\ast}_{i+1,j}) - \tfrac{1}{2}\,\Delta y\left(\frac{1}{a_P^{i,j}} + \frac{1}{a_P^{i+1,j}}\right)(p_{i+1,j} - p_{i,j})$$
 
-This is **exactly** the factor multiplying `(p_E - p_P)` in the Rhie-Chow
-east face velocity. This consistency is critical:
-- The p' equation says "this much p' change will produce this much velocity change"
-- The Rhie-Chow formula uses the same coefficient to relate p to velocity
-- If they were inconsistent, the pressure correction would not drive bP to zero
+$$F_e = \rho\,u_e\,\Delta y$$
+
+**West face** (between $W = (i-1,j)$ and $P = (i,j)$):
+
+$$u_w = \tfrac{1}{2}(u^{\ast}_{i-1,j} + u^{\ast}_{i,j}) - \tfrac{1}{2}\,\Delta y\left(\frac{1}{a_P^{i-1,j}} + \frac{1}{a_P^{i,j}}\right)(p_{i,j} - p_{i-1,j})$$
+
+$$F_w = \rho\,u_w\,\Delta y$$
+
+**North face** (between $P = (i,j)$ and $N = (i,j+1)$):
+
+$$v_n = \tfrac{1}{2}(v^{\ast}_{i,j} + v^{\ast}_{i,j+1}) - \tfrac{1}{2}\,\Delta x\left(\frac{1}{a_P^{i,j}} + \frac{1}{a_P^{i,j+1}}\right)(p_{i,j+1} - p_{i,j})$$
+
+$$F_n = \rho\,v_n\,\Delta x$$
+
+**South face** (between $S = (i,j-1)$ and $P = (i,j)$):
+
+$$v_s = \tfrac{1}{2}(v^{\ast}_{i,j-1} + v^{\ast}_{i,j}) - \tfrac{1}{2}\,\Delta x\left(\frac{1}{a_P^{i,j-1}} + \frac{1}{a_P^{i,j}}\right)(p_{i,j} - p_{i,j-1})$$
+
+$$F_s = \rho\,v_s\,\Delta x$$
+
+The **mass imbalance** (continuity residual) for cell $(i,j)$:
+
+$$b_P = F_e - F_w + F_n - F_s$$
+
+---
+
+## Consistency with the Pressure-Correction Equation
+
+The $p'$ equation coefficients from Chapter 5 are:
+
+$$a_E' = \rho\,\Delta y\,D_f^{e} = \tfrac{1}{2}\,\rho\,\Delta y^2\left(\frac{1}{a_P^{i,j}} + \frac{1}{a_P^{i+1,j}}\right)$$
+
+This is **exactly** $\rho\,\Delta y$ times the $D_f^{e}$ from the Rhie–Chow formula. This consistency is not a coincidence — it is **required**:
+
+- The $p'$ equation says: "this much $p'$ change will produce this much face velocity change, which will reduce $b_P$ by this much."
+- The Rhie–Chow formula uses the same $D_f$ to compute how pressure affects face velocity.
+- If the two were inconsistent, the pressure correction would over- or under-correct, and SIMPLE would not converge.
 
 ---
 
@@ -151,7 +114,7 @@ east face velocity. This consistency is critical:
 
 | Concept | File | Function |
 |---|---|---|
-| Rhie-Chow face velocities | `solver/rhie_chow.py` | `compute_face_velocity_rhie_chow` |
-| Mass imbalance bP | `solver/rhie_chow.py` | `compute_mass_imbalance` |
-| p' coefficients (consistent) | `solver/pressure.py` | `build_pressure_correction_coeffs` |
-| aP storage for Rhie-Chow | `solver/momentum.py` | `au_P_arr`, `av_P_arr` |
+| Rhie–Chow face velocities | `solver/rhie_chow.py` | `compute_face_velocity_rhie_chow` |
+| Mass imbalance $b_P$ | `solver/rhie_chow.py` | computed inside the same function |
+| $p'$ coefficients (consistent) | `solver/pressure.py` | `build_pressure_correction_coeffs` |
+| Stored $a_P$ for $D_f$ | `solver/momentum.py` | `au_P_arr`, `av_P_arr` |

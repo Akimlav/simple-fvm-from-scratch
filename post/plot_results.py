@@ -6,8 +6,8 @@ Visualise the solver output and validate against Ghia et al. (1982).
 Plots produced:
   1. Pressure contours with velocity quiver arrows
   2. Streamlines over the pressure field
-  3. u-velocity centreline profile at x = 0.5 (vs Ghia Re=100 data)
-  4. v-velocity centreline profile at y = 0.5 (vs Ghia Re=100 data)
+  3. u-velocity centreline profile at x = 0.5 (vs Ghia CSV, Re=100 and Re=400)
+  4. v-velocity centreline profile at y = 0.5 (vs Ghia CSV, Re=100 and Re=400)
 
 Usage
 -----
@@ -16,16 +16,19 @@ Usage
 
     python post/plot_results.py
 
-Ghia et al. (1982) benchmark data for Re = 100:
-  Ghia, U., Ghia, K.N., Shin, C.T. (1982). High-Re solutions for
-  incompressible flow using the Navier-Stokes equations and a multigrid method.
-  Journal of Computational Physics, 48(3), 387-411.
+Ghia et al. (1982) benchmark tables are read from
+  data/ghia_et_al_1982_tables.csv
+(non-dimensional velocities, 129×129 uniform grid; see data/ghia_et_al_1982_tables.txt).
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
-import os
+from __future__ import annotations
 
+import csv
+import os
+from typing import Dict, Iterable, List, Mapping, Optional, Tuple
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 # =============================================================================
 # GHIA et al. (1982) BENCHMARK DATA
@@ -53,6 +56,101 @@ def load_ghia_v(Re=100):
 
 
 def plot_pressure_and_velocity(u, v, p, grid_x, grid_y, save_path=None):
+# Directory for saved figures (PNGs are committed to the repo)
+RESULTS_DIR = "results"
+
+# Default Ghia reference Reynolds numbers to plot from the CSV (columns Re_100, Re_400, …)
+DEFAULT_GHIA_REYNOLDS: Tuple[int, ...] = (100, 400)
+
+# CSV column name for each Reynolds number
+_RE_COLUMN: Dict[int, str] = {
+    100: "Re_100",
+    400: "Re_400",
+    1000: "Re_1000",
+    3200: "Re_3200",
+    5000: "Re_5000",
+    7500: "Re_7500",
+    10000: "Re_10000",
+}
+
+_SERIES_U = "u_vertical_centre"
+_SERIES_V = "v_horizontal_centre"
+
+# Mapping from scheme short names to filename-friendly labels
+_SCHEME_FILE_LABELS: Dict[str, str] = {
+    "uds": "Upwind",
+    "cds": "CentralDifference",
+    "sou": "SecondOrderUpwind",
+}
+
+
+def _file_suffix(re: Optional[float] = None, scheme: Optional[str] = None) -> str:
+    """Build a filename suffix like '_Re100_CentralDifference' from Re and scheme."""
+    parts: List[str] = []
+    if re is not None:
+        parts.append(f"Re{int(re)}")
+    if scheme is not None:
+        parts.append(_SCHEME_FILE_LABELS.get(scheme, scheme))
+    return ("_" + "_".join(parts)) if parts else ""
+
+
+def _ghia_csv_path() -> str:
+    return os.path.normpath(
+        os.path.join(os.path.dirname(__file__), "..", "data", "ghia_et_al_1982_tables.csv")
+    )
+
+
+def load_ghia_centreline_profiles(
+    csv_path: Optional[str] = None,
+    reynolds_numbers: Iterable[int] = DEFAULT_GHIA_REYNOLDS,
+) -> Dict[int, Dict[str, Tuple[np.ndarray, np.ndarray]]]:
+    """
+    Load Ghia u- and v-centreline benchmark data for the requested Reynolds numbers.
+
+    Returns
+    -------
+    dict[Re] -> {"u": (y, u_velocity), "v": (x, v_velocity)}
+    """
+    path = csv_path or _ghia_csv_path()
+    if not os.path.isfile(path):
+        print(f"  [info] Ghia benchmark CSV not found: {path} — skipping reference data")
+        return {}
+
+    res_list: List[int] = list(reynolds_numbers)
+    for re in res_list:
+        if re not in _RE_COLUMN:
+            raise ValueError(f"No CSV column mapping for Re={re}; known: {sorted(_RE_COLUMN)}")
+
+    col_u = [_RE_COLUMN[re] for re in res_list]
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        if reader.fieldnames is None:
+            raise ValueError(f"CSV has no header row: {path}")
+        missing = [c for c in col_u if c not in reader.fieldnames]
+        if missing:
+            raise ValueError(f"CSV missing columns {missing} in {path}")
+
+        rows_u: List[dict] = []
+        rows_v: List[dict] = []
+        for row in reader:
+            s = row.get("series", "").strip()
+            if s == _SERIES_U:
+                rows_u.append(row)
+            elif s == _SERIES_V:
+                rows_v.append(row)
+
+    out: Dict[int, Dict[str, Tuple[np.ndarray, np.ndarray]]] = {}
+    for re, col in zip(res_list, col_u):
+        y_u = np.array([float(r["y"]) for r in rows_u])
+        u_v = np.array([float(r[col]) for r in rows_u])
+        x_v = np.array([float(r["x"]) for r in rows_v])
+        v_v = np.array([float(r[col]) for r in rows_v])
+        out[re] = {"u": (y_u, u_v), "v": (x_v, v_v)}
+
+    return out
+
+
+def plot_pressure_and_velocity(u, v, p, grid_x, grid_y, suffix: str = ""):
     """
     Plot pressure contours with velocity quiver arrows.
 
@@ -63,24 +161,31 @@ def plot_pressure_and_velocity(u, v, p, grid_x, grid_y, save_path=None):
     grid_x  : 1D x-coordinate array
     grid_y  : 1D y-coordinate array
     save_path : str or None, if given save to file instead of showing
+    suffix  : filename suffix (e.g. '_Re100_CentralDifference')
     """
-    X, Y = np.meshgrid(grid_x, grid_y, indexing='ij')
+    X, Y = np.meshgrid(grid_x, grid_y, indexing="ij")
 
     fig, ax = plt.subplots(figsize=(8, 7))
-    cf = ax.contourf(X, Y, p, levels=30, cmap='RdBu_r', alpha=0.8)
-    plt.colorbar(cf, ax=ax, label='Pressure [Pa]')
-    cs = ax.contour(X, Y, p, levels=15, colors='k', linewidths=0.5, alpha=0.5)
+    cf = ax.contourf(X, Y, p, levels=30, cmap="RdBu_r", alpha=0.8)
+    plt.colorbar(cf, ax=ax, label="Pressure [Pa]")
+    ax.contour(X, Y, p, levels=15, colors="k", linewidths=0.5, alpha=0.5)
 
     # Quiver: skip every other point for readability
     skip = max(1, len(grid_x) // 20)
-    ax.quiver(X[::skip, ::skip], Y[::skip, ::skip],
-              u[::skip, ::skip], v[::skip, ::skip],
-              scale=10, color='k', alpha=0.8)
+    ax.quiver(
+        X[::skip, ::skip],
+        Y[::skip, ::skip],
+        u[::skip, ::skip],
+        v[::skip, ::skip],
+        scale=10,
+        color="k",
+        alpha=0.8,
+    )
 
-    ax.set_xlabel('x [m]', fontsize=12)
-    ax.set_ylabel('y [m]', fontsize=12)
-    ax.set_title('Pressure Field and Velocity Vectors', fontsize=13)
-    ax.set_aspect('equal')
+    ax.set_xlabel("x [m]", fontsize=12)
+    ax.set_ylabel("y [m]", fontsize=12)
+    ax.set_title("Pressure Field and Velocity Vectors", fontsize=13)
+    ax.set_aspect("equal")
     plt.tight_layout()
     if save_path:
         fig.savefig(save_path, dpi=150, bbox_inches='tight')
@@ -90,6 +195,12 @@ def plot_pressure_and_velocity(u, v, p, grid_x, grid_y, save_path=None):
 
 
 def plot_streamlines(u, v, p, grid_x, grid_y, save_path=None):
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    fig.savefig(os.path.join(RESULTS_DIR, f"pressure_velocity{suffix}.png"), dpi=150)
+    plt.show()
+
+
+def plot_streamlines(u, v, p, grid_x, grid_y, suffix: str = ""):
     """
     Plot streamlines overlaid on pressure contours.
 
@@ -100,19 +211,19 @@ def plot_streamlines(u, v, p, grid_x, grid_y, save_path=None):
     grid_x  : 1D x-coordinate array
     grid_y  : 1D y-coordinate array
     save_path : str or None, if given save to file instead of showing
+    suffix  : filename suffix (e.g. '_Re100_CentralDifference')
     """
     fig, ax = plt.subplots(figsize=(8, 7))
-    cf = ax.contourf(grid_x, grid_y, p.T, levels=50, cmap='coolwarm', alpha=0.7)
-    plt.colorbar(cf, ax=ax, label='Pressure [Pa]')
+    cf = ax.contourf(grid_x, grid_y, p.T, levels=50, cmap="coolwarm", alpha=0.7)
+    plt.colorbar(cf, ax=ax, label="Pressure [Pa]")
 
     # streamplot needs (x, y, u.T, v.T) because it expects [y,x] ordering
-    ax.streamplot(grid_x, grid_y, u.T, v.T,
-                  density=1.5, color='k', linewidth=0.8)
+    ax.streamplot(grid_x, grid_y, u.T, v.T, density=1.5, color="k", linewidth=0.8)
 
-    ax.set_xlabel('x [m]', fontsize=12)
-    ax.set_ylabel('y [m]', fontsize=12)
-    ax.set_title('Streamlines', fontsize=13)
-    ax.set_aspect('equal')
+    ax.set_xlabel("x [m]", fontsize=12)
+    ax.set_ylabel("y [m]", fontsize=12)
+    ax.set_title("Streamlines", fontsize=13)
+    ax.set_aspect("equal")
     plt.tight_layout()
     if save_path:
         fig.savefig(save_path, dpi=150, bbox_inches='tight')
@@ -184,6 +295,137 @@ def plot_v_centreline(v, grid_x, grid_y, Re=100, save_path=None):
 
 
 def plot_convergence(residuals, save_path=None):
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    fig.savefig(os.path.join(RESULTS_DIR, f"streamlines{suffix}.png"), dpi=150)
+    plt.show()
+
+
+def _ghia_scatter_style(re: int) -> Mapping[str, object]:
+    """Distinct marker/colour per Reynolds number for Ghia reference points."""
+    if re == 100:
+        return {"color": "0.15", "marker": "o", "s": 48, "edgecolors": "0.15", "linewidths": 0.6}
+    if re == 400:
+        return {
+            "color": "tab:orange",
+            "marker": "^",
+            "s": 52,
+            "edgecolors": "darkorange",
+            "linewidths": 0.6,
+        }
+    return {"color": None, "marker": "D", "s": 44, "edgecolors": "k", "linewidths": 0.5}
+
+
+def plot_u_centreline(
+    u,
+    grid_x,
+    grid_y,
+    ghia_profiles: Optional[Dict[int, Dict[str, Tuple[np.ndarray, np.ndarray]]]] = None,
+    ghia_reynolds: Iterable[int] = DEFAULT_GHIA_REYNOLDS,
+    solver_re: Optional[float] = None,
+    suffix: str = "",
+):
+    """
+    Plot u-velocity profile at x = 0.5 (vertical centreline).
+    Overlays Ghia et al. (1982) data from CSV for each requested Re.
+    """
+    if ghia_profiles is None:
+        ghia_profiles = load_ghia_centreline_profiles(reynolds_numbers=ghia_reynolds)
+
+    i_mid = int(np.argmin(np.abs(grid_x - 0.5)))
+    u_profile = u[i_mid, :]  # u at x closest to 0.5, varying y
+
+    fig, ax = plt.subplots(figsize=(7, 7))
+    sol_label = "SIMPLE solver"
+    if solver_re is not None:
+        sol_label = f"SIMPLE solver (Re ≈ {solver_re:.0f})"
+    ax.plot(u_profile, grid_y, "b-", linewidth=2, label=sol_label, zorder=3)
+
+    for re in ghia_reynolds:
+        if re not in ghia_profiles:
+            continue
+        y_g, u_g = ghia_profiles[re]["u"]
+        kw = dict(_ghia_scatter_style(re))
+        fc = kw.pop("color")
+        ax.scatter(
+            u_g,
+            y_g,
+            facecolors="none" if re == 100 else fc,
+            zorder=5,
+            label=f"Ghia et al. (1982) Re={re}",
+            **kw,
+        )
+
+    ax.axvline(0, color="gray", linewidth=0.5)
+    ax.set_xlabel("u [m/s]", fontsize=12)
+    ax.set_ylabel("y [m]", fontsize=12)
+    ax.set_title(
+        f'Centreline u-velocity  (x = {grid_x[i_mid]:.4f} ≈ 0.5)',
+        fontsize=12,
+    )
+    ax.legend(fontsize=9)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    fig.savefig(os.path.join(RESULTS_DIR, f"u_centreline{suffix}.png"), dpi=150)
+    plt.show()
+
+
+def plot_v_centreline(
+    v,
+    grid_x,
+    grid_y,
+    ghia_profiles: Optional[Dict[int, Dict[str, Tuple[np.ndarray, np.ndarray]]]] = None,
+    ghia_reynolds: Iterable[int] = DEFAULT_GHIA_REYNOLDS,
+    solver_re: Optional[float] = None,
+    suffix: str = "",
+):
+    """
+    Plot v-velocity profile at y = 0.5 (horizontal centreline).
+    Overlays Ghia et al. (1982) data from CSV for each requested Re.
+    """
+    if ghia_profiles is None:
+        ghia_profiles = load_ghia_centreline_profiles(reynolds_numbers=ghia_reynolds)
+
+    j_mid = int(np.argmin(np.abs(grid_y - 0.5)))
+    v_profile = v[:, j_mid]  # v at y closest to 0.5, varying x
+
+    fig, ax = plt.subplots(figsize=(7, 7))
+    sol_label = "SIMPLE solver"
+    if solver_re is not None:
+        sol_label = f"SIMPLE solver (Re ≈ {solver_re:.0f})"
+    ax.plot(grid_x, v_profile, "r-", linewidth=2, label=sol_label, zorder=3)
+
+    for re in ghia_reynolds:
+        if re not in ghia_profiles:
+            continue
+        x_g, v_g = ghia_profiles[re]["v"]
+        kw = dict(_ghia_scatter_style(re))
+        fc = kw.pop("color")
+        ax.scatter(
+            x_g,
+            v_g,
+            facecolors="none" if re == 100 else fc,
+            zorder=5,
+            label=f"Ghia et al. (1982) Re={re}",
+            **kw,
+        )
+
+    ax.axhline(0, color="gray", linewidth=0.5)
+    ax.set_xlabel("x [m]", fontsize=12)
+    ax.set_ylabel("v [m/s]", fontsize=12)
+    ax.set_title(
+        f'Centreline v-velocity  (y = {grid_y[j_mid]:.4f} ≈ 0.5)',
+        fontsize=12,
+    )
+    ax.legend(fontsize=9)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    fig.savefig(os.path.join(RESULTS_DIR, f"v_centreline{suffix}.png"), dpi=150)
+    plt.show()
+
+
+def plot_convergence(residuals, suffix: str = ""):
     """
     Plot continuity residual convergence history.
 
@@ -193,11 +435,11 @@ def plot_convergence(residuals, save_path=None):
     save_path : str or None, if given save to file instead of showing
     """
     fig, ax = plt.subplots(figsize=(8, 4))
-    ax.semilogy(residuals, 'k-', linewidth=1.5)
-    ax.set_xlabel('SIMPLE Iteration', fontsize=12)
-    ax.set_ylabel('max|bP|  (continuity residual)', fontsize=12)
-    ax.set_title('SIMPLE Convergence History', fontsize=12)
-    ax.grid(True, which='both', alpha=0.3)
+    ax.semilogy(residuals, "k-", linewidth=1.5)
+    ax.set_xlabel("SIMPLE Iteration", fontsize=12)
+    ax.set_ylabel("max|bP|  (continuity residual)", fontsize=12)
+    ax.set_title("SIMPLE Convergence History", fontsize=12)
+    ax.grid(True, which="both", alpha=0.3)
     plt.tight_layout()
     if save_path:
         fig.savefig(save_path, dpi=150, bbox_inches='tight')
@@ -208,6 +450,23 @@ def plot_convergence(residuals, save_path=None):
 
 def plot_all(u, v, p, grid_x, grid_y, residuals=None,
              Re=100, save_dir=None):
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    fig.savefig(os.path.join(RESULTS_DIR, f"convergence{suffix}.png"), dpi=150)
+    plt.show()
+
+
+def plot_all(
+    u,
+    v,
+    p,
+    grid_x,
+    grid_y,
+    residuals=None,
+    re: Optional[float] = None,
+    ghia_reynolds: Iterable[int] = DEFAULT_GHIA_REYNOLDS,
+    ghia_csv_path: Optional[str] = None,
+    convection_scheme: Optional[str] = None,
+):
     """
     Convenience function: produce all standard plots.
 
@@ -244,6 +503,49 @@ def plot_all(u, v, p, grid_x, grid_y, residuals=None,
         print("Plotting convergence history...")
         plot_convergence(residuals,
                          save_path=path("convergence.png"))
+    re        : optional solver Reynolds number (for legend labels)
+    ghia_reynolds : which Re columns from the Ghia CSV to overlay (default 100 and 400)
+    ghia_csv_path : optional path to CSV; default is data/ghia_et_al_1982_tables.csv
+    convection_scheme : scheme name ('uds', 'cds', 'sou') for filename suffix
+    """
+    suffix = _file_suffix(re, convection_scheme)
+
+    ghia_profiles = load_ghia_centreline_profiles(
+        csv_path=ghia_csv_path,
+        reynolds_numbers=ghia_reynolds,
+    )
+
+    print("Plotting pressure and velocity field...")
+    plot_pressure_and_velocity(u, v, p, grid_x, grid_y, suffix=suffix)
+
+    print("Plotting streamlines...")
+    plot_streamlines(u, v, p, grid_x, grid_y, suffix=suffix)
+
+    print("Plotting u centreline vs Ghia...")
+    plot_u_centreline(
+        u,
+        grid_x,
+        grid_y,
+        ghia_profiles=ghia_profiles,
+        ghia_reynolds=ghia_reynolds,
+        solver_re=re,
+        suffix=suffix,
+    )
+
+    print("Plotting v centreline vs Ghia...")
+    plot_v_centreline(
+        v,
+        grid_x,
+        grid_y,
+        ghia_profiles=ghia_profiles,
+        ghia_reynolds=ghia_reynolds,
+        solver_re=re,
+        suffix=suffix,
+    )
+
+    if residuals is not None:
+        print("Plotting convergence history...")
+        plot_convergence(residuals, suffix=suffix)
 
 
 # =============================================================================
