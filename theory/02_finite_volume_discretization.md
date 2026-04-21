@@ -14,7 +14,7 @@ $$\frac{\partial(\rho u \phi)}{\partial x} + \frac{\partial(\rho v \phi)}{\parti
 
 In compact vector notation:
 
-$$\nabla \cdot (\rho \mathbf{u}\,\phi) = \nabla \cdot (\Gamma \nabla \phi) + S_\phi$$
+$$\nabla \cdot (\rho \mathbf{u} \phi) = \nabla \cdot (\Gamma \nabla \phi) + S_\phi$$
 
 ---
 
@@ -36,7 +36,7 @@ $$\int_V \nabla \cdot \mathbf{F}\ dV = \oint_S \mathbf{F} \cdot \hat{\mathbf{n}}
 
 Applying this to both the convective and diffusive terms:
 
-$$\underbrace{\oint_S (\rho \mathbf{u}\ \phi) \cdot \hat{\mathbf{n}}\;dS}_{\text{net convective flux out}} = \underbrace{\oint_S (\Gamma \nabla \phi) \cdot \hat{\mathbf{n}}\ dS}_{\text{net diffusive flux in}} + \underbrace{\bar{S}_\phi\,\Delta V}_{\text{source}}$$
+$$\underbrace{\oint_S (\rho \mathbf{u}\ \phi) \cdot \hat{\mathbf{n}}\;dS}_{\text{net convective flux out}} = \underbrace{\oint_S (\Gamma \nabla \phi) \cdot \hat{\mathbf{n}}\ dS}_{\text{net diffusive flux in}} + \underbrace{\bar{S}_\phi \Delta V}_{\text{source}}$$
 
 This is **exact** — no approximation has been made yet. The key insight: we only need fluxes through the cell faces, not the full field inside each cell.
 
@@ -74,13 +74,13 @@ $$A_e = A_w = \Delta y \qquad A_n = A_s = \Delta x$$
 
 The surface integral becomes a sum over the four faces:
 
-$$\oint_S (\rho \mathbf{u}\,\phi) \cdot \hat{\mathbf{n}}\;dS \;\approx\; \underbrace{(\rho u \phi)_e\,\Delta y}_{J_e^c} - \underbrace{(\rho u \phi)_w\,\Delta y}_{J_w^c} + \underbrace{(\rho v \phi)_n\,\Delta x}_{J_n^c} - \underbrace{(\rho v \phi)_s\,\Delta x}_{J_s^c}$$
+$$\oint_S (\rho \mathbf{u} \phi) \cdot \hat{\mathbf{n}}\;dS \;\approx\; \underbrace{(\rho u \phi)_e \Delta y}_{J_e^c} - \underbrace{(\rho u \phi)_w \Delta y}_{J_w^c} + \underbrace{(\rho v \phi)_n \Delta x}_{J_n^c} - \underbrace{(\rho v \phi)_s \Delta x}_{J_s^c}$$
 
 The signs follow from the outward normal: $+x$ at the east face, $-x$ at the west face, $+y$ at the north face, $-y$ at the south face.
 
 Similarly for diffusion:
 
-$$\oint_S (\Gamma \nabla \phi) \cdot \hat{\mathbf{n}}\;dS \;\approx\; \Gamma\frac{\phi_E - \phi_P}{\Delta x}\,\Delta y - \Gamma\frac{\phi_P - \phi_W}{\Delta x}\,\Delta y + \Gamma\frac{\phi_N - \phi_P}{\Delta y}\,\Delta x - \Gamma\frac{\phi_P - \phi_S}{\Delta y}\,\Delta x$$
+$$\oint_S (\Gamma \nabla \phi) \cdot \hat{\mathbf{n}}\;dS \;\approx\; \Gamma\frac{\phi_E - \phi_P}{\Delta x} \Delta y - \Gamma\frac{\phi_P - \phi_W}{\Delta x} \Delta y + \Gamma\frac{\phi_N - \phi_P}{\Delta y} \Delta x - \Gamma\frac{\phi_P - \phi_S}{\Delta y} \Delta x$$
 
 ---
 
@@ -88,9 +88,9 @@ $$\oint_S (\Gamma \nabla \phi) \cdot \hat{\mathbf{n}}\;dS \;\approx\; \Gamma\fra
 
 **Mass fluxes** through each face (positive in the $+x$ or $+y$ direction):
 
-$$F_e = \rho\, u_e\, \Delta y \qquad F_w = \rho\, u_w\, \Delta y$$
+$$F_e = \rho  u_e  \Delta y \qquad F_w = \rho  u_w  \Delta y$$
 
-$$F_n = \rho\, v_n\, \Delta x \qquad F_s = \rho\, v_s\, \Delta x$$
+$$F_n = \rho  v_n  \Delta x \qquad F_s = \rho  v_s  \Delta x$$
 
 **Diffusion conductances** (face area divided by distance between adjacent nodes):
 
@@ -102,7 +102,7 @@ For a uniform grid with $\Gamma = \mu$, these are **constant** — computed once
 
 The integrated equation now reads:
 
-$$\underbrace{F_e\,\phi_e - F_w\,\phi_w + F_n\,\phi_n - F_s\,\phi_s}_{\text{convection}} = \underbrace{D_e(\phi_E - \phi_P) - D_w(\phi_P - \phi_W) + D_n(\phi_N - \phi_P) - D_s(\phi_P - \phi_S)}_{\text{diffusion}} + S_\phi\,\Delta V$$
+$$\underbrace{F_e \phi_e - F_w \phi_w + F_n \phi_n - F_s \phi_s}_{\text{convection}} = \underbrace{D_e(\phi_E - \phi_P) - D_w(\phi_P - \phi_W) + D_n(\phi_N - \phi_P) - D_s(\phi_P - \phi_S)}_{\text{diffusion}} + S_\phi \Delta V$$
 
 **Everything is exact except for two unknowns: the face values** $\phi_e, \phi_w, \phi_n, \phi_s$ in the convective terms. These are between the grid nodes, so we need an **interpolation scheme** to express them in terms of nodal values. That is the subject of Chapter 3.
 
@@ -112,7 +112,7 @@ $$\underbrace{F_e\,\phi_e - F_w\,\phi_w + F_n\,\phi_n - F_s\,\phi_s}_{\text{conv
 
 After choosing an interpolation scheme (Chapter 3 derives the upwind choice), all face values become linear combinations of $\phi_P$ and its neighbours. The equation for each cell collapses into:
 
-$$\boxed{a_P\,\phi_P = a_E\,\phi_E + a_W\,\phi_W + a_N\,\phi_N + a_S\,\phi_S + b}$$
+$$\boxed{a_P \phi_P = a_E \phi_E + a_W \phi_W + a_N \phi_N + a_S \phi_S + b}$$
 
 where:
 - $a_E, a_W, a_N, a_S$ are **neighbour coefficients** (contain both convection and diffusion contributions)

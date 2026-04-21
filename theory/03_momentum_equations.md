@@ -8,7 +8,7 @@ Chapter 2 derived the general FVM equation and left one question open: how to ex
 
 From Chapter 2, the integrated transport equation for cell $(i,j)$ is:
 
-$$F_e\,\phi_e - F_w\,\phi_w + F_n\,\phi_n - F_s\,\phi_s = D_e(\phi_E - \phi_P) - D_w(\phi_P - \phi_W) + D_n(\phi_N - \phi_P) - D_s(\phi_P - \phi_S) + S\,\Delta V$$
+$$F_e \phi_e - F_w \phi_w + F_n \phi_n - F_s \phi_s = D_e(\phi_E - \phi_P) - D_w(\phi_P - \phi_W) + D_n(\phi_N - \phi_P) - D_s(\phi_P - \phi_S) + S \Delta V$$
 
 We need to express each face value $\phi_f$ in terms of the values at nodes $P$ and its neighbour across that face.
 
@@ -26,20 +26,20 @@ $$\phi_e = \begin{cases} \phi_P & \text{if } F_e > 0 \quad\text{(flow goes P →
 
 This conditional can be written without branching:
 
-$$F_e\,\phi_e = \max(F_e,\,0)\;\phi_P \;+\; \min(F_e,\,0)\;\phi_E$$
+$$F_e \phi_e = \max(F_e, 0)\;\phi_P \;+\; \min(F_e, 0)\;\phi_E$$
 
 Equivalently (using $\min(F_e, 0) = -\max(-F_e, 0)$):
 
-$$F_e\,\phi_e = \max(F_e,\,0)\;\phi_P - \max(-F_e,\,0)\;\phi_E$$
+$$F_e \phi_e = \max(F_e, 0)\;\phi_P - \max(-F_e, 0)\;\phi_E$$
 
 Applying the same logic to all four faces:
 
-| Face | $F_f\,\phi_f$ |
+| Face | $F_f \phi_f$ |
 |---|---|
-| East | $\max(F_e, 0)\,\phi_P - \max(-F_e, 0)\,\phi_E$ |
-| West | $\max(F_w, 0)\,\phi_W - \max(-F_w, 0)\,\phi_P$ |
-| North | $\max(F_n, 0)\,\phi_P - \max(-F_n, 0)\,\phi_N$ |
-| South | $\max(F_s, 0)\,\phi_S - \max(-F_s, 0)\,\phi_P$ |
+| East | $\max(F_e, 0) \phi_P - \max(-F_e, 0) \phi_E$ |
+| West | $\max(F_w, 0) \phi_W - \max(-F_w, 0) \phi_P$ |
+| North | $\max(F_n, 0) \phi_P - \max(-F_n, 0) \phi_N$ |
+| South | $\max(F_s, 0) \phi_S - \max(-F_s, 0) \phi_P$ |
 
 ---
 
@@ -86,13 +86,13 @@ $$u_e = \tfrac{1}{2}(u_P + u_E) \qquad v_n = \tfrac{1}{2}(v_P + v_N)$$
 
 For the $x$-momentum equation, the mass fluxes through each face are:
 
-$$F_e = \rho\,\Delta y \cdot \tfrac{1}{2}(u_{i,j} + u_{i+1,j})$$
+$$F_e = \rho \Delta y \cdot \tfrac{1}{2}(u_{i,j} + u_{i+1,j})$$
 
-$$F_w = \rho\,\Delta y \cdot \tfrac{1}{2}(u_{i-1,j} + u_{i,j})$$
+$$F_w = \rho \Delta y \cdot \tfrac{1}{2}(u_{i-1,j} + u_{i,j})$$
 
-$$F_n = \rho\,\Delta x \cdot \tfrac{1}{2}(v_{i,j} + v_{i,j+1})$$
+$$F_n = \rho \Delta x \cdot \tfrac{1}{2}(v_{i,j} + v_{i,j+1})$$
 
-$$F_s = \rho\,\Delta x \cdot \tfrac{1}{2}(v_{i,j-1} + v_{i,j})$$
+$$F_s = \rho \Delta x \cdot \tfrac{1}{2}(v_{i,j-1} + v_{i,j})$$
 
 These are computed from the **current** velocity field at the start of each SIMPLE iteration and are held fixed while solving the momentum equation (this is the "semi-implicit" in SIMPLE).
 
@@ -102,15 +102,15 @@ These are computed from the **current** velocity field at the start of each SIMP
 
 The pressure gradient $-\partial p / \partial x$ is a source term for the $x$-momentum equation. Integrating over the cell volume:
 
-$$\int_V \left(-\frac{\partial p}{\partial x}\right) dV \approx -\frac{\partial p}{\partial x}\bigg|_P \cdot \Delta x\,\Delta y$$
+$$\int_V \left(-\frac{\partial p}{\partial x}\right) dV \approx -\frac{\partial p}{\partial x}\bigg|_P \cdot \Delta x \Delta y$$
 
 On a **collocated grid**, the pressure gradient at node $P$ is approximated by a central difference across two neighbours:
 
-$$\frac{\partial p}{\partial x}\bigg|_P \approx \frac{p_E - p_W}{2\,\Delta x} = \frac{p_{i+1,j} - p_{i-1,j}}{2\,\Delta x}$$
+$$\frac{\partial p}{\partial x}\bigg|_P \approx \frac{p_E - p_W}{2 \Delta x} = \frac{p_{i+1,j} - p_{i-1,j}}{2 \Delta x}$$
 
 Substituting:
 
-$$b_{\text{pressure}} = -\frac{p_{i+1,j} - p_{i-1,j}}{2\,\Delta x} \cdot \Delta x\,\Delta y = -\frac{\Delta y}{2}\,(p_{i+1,j} - p_{i-1,j})$$
+$$b_{\text{pressure}} = -\frac{p_{i+1,j} - p_{i-1,j}}{2 \Delta x} \cdot \Delta x \Delta y = -\frac{\Delta y}{2} (p_{i+1,j} - p_{i-1,j})$$
 
 > **Note:** this wide-stencil gradient $(p_{i+1} - p_{i-1})$ skips the immediate neighbour — it is one source of the **checkerboard instability** (Chapter 4). Rhie–Chow interpolation (Chapter 7) repairs continuity without changing the momentum equation itself.
 
@@ -122,17 +122,17 @@ $$b_{\text{pressure}} = -\frac{p_{i+1,j} - p_{i-1,j}}{2\,\Delta x} \cdot \Delta 
 
 SIMPLE is an iterative scheme. At each iteration, the momentum equations are solved with a pressure field that may be far from the true solution. Direct substitution of the newly computed $u$ often **overshoots**, causing divergence. Under-relaxation slows down the update:
 
-$$u_P^{\text{new}} = u_P^{\text{old}} + \alpha_u\,(u_P^{\text{direct}} - u_P^{\text{old}})$$
+$$u_P^{\text{new}} = u_P^{\text{old}} + \alpha_u (u_P^{\text{direct}} - u_P^{\text{old}})$$
 
 where $\alpha_u \in (0, 1)$ is the under-relaxation factor ($\alpha_u = 1$ means no relaxation; $\alpha_u = 0.5$ means take half the step).
 
 ### Equivalent Modified Equation
 
-Under-relaxation can be built directly into the coefficients. Starting from $a_P\,u_P^{\text{direct}} = \sum a_{nb}\,u_{nb} + b$ and substituting the relaxation formula:
+Under-relaxation can be built directly into the coefficients. Starting from $a_P u_P^{\text{direct}} = \sum a_{nb} u_{nb} + b$ and substituting the relaxation formula:
 
-$$\frac{a_P}{\alpha_u}\,u_P = \sum a_{nb}\,u_{nb} + b + \frac{1 - \alpha_u}{\alpha_u}\,a_P\,u_P^{\text{old}}$$
+$$\frac{a_P}{\alpha_u} u_P = \sum a_{nb} u_{nb} + b + \frac{1 - \alpha_u}{\alpha_u} a_P u_P^{\text{old}}$$
 
-The modified central coefficient is $a_P / \alpha_u$ (larger → more diagonally dominant → more stable), and an extra source $\frac{1-\alpha_u}{\alpha_u}\,a_P\,u_P^{\text{old}}$ anchors the solution to the previous iterate.
+The modified central coefficient is $a_P / \alpha_u$ (larger → more diagonally dominant → more stable), and an extra source $\frac{1-\alpha_u}{\alpha_u} a_P u_P^{\text{old}}$ anchors the solution to the previous iterate.
 
 ---
 
@@ -140,7 +140,7 @@ The modified central coefficient is $a_P / \alpha_u$ (larger → more diagonally
 
 Putting it all together:
 
-$$\boxed{a_P^u\,u_P^* = a_E^u\,u_E^* + a_W^u\,u_W^* + a_N^u\,u_N^* + a_S^u\,u_S^* - \frac{\Delta y}{2}(p_E - p_W) + \frac{1-\alpha_u}{\alpha_u}\,a_P^{u,0}\,u_P^{\text{old}}}$$
+$$\boxed{a_P^u u_P^* = a_E^u u_E^* + a_W^u u_W^* + a_N^u u_N^* + a_S^u u_S^* - \frac{\Delta y}{2}(p_E - p_W) + \frac{1-\alpha_u}{\alpha_u} a_P^{u,0} u_P^{\text{old}}}$$
 
 where $a_P^{u,0}$ is the unrelaxed central coefficient and $a_P^u = a_P^{u,0} / \alpha_u$.
 
@@ -161,7 +161,7 @@ The **unrelaxed** $a_P$ is stored in `au_P_arr[i,j]` — it is reused in the pre
 Identical structure with $u \to v$ and $x \leftrightarrow y$:
 
 - Pressure source: $b_{\text{pressure}} = -\frac{\Delta x}{2}(p_{i,j+1} - p_{i,j-1})$
-- Diffusion: $D_e = D_w = \mu\,\Delta y / \Delta x$, $D_n = D_s = \mu\,\Delta x / \Delta y$ (same values)
+- Diffusion: $D_e = D_w = \mu \Delta y / \Delta x$, $D_n = D_s = \mu \Delta x / \Delta y$ (same values)
 - Mass fluxes: same as for $u$
 
 ---

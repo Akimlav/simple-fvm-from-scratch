@@ -28,7 +28,7 @@ All of fluid mechanics is built on conservation principles: mass cannot appear o
 
 Every conservation law in this project — mass, $x$-momentum, $y$-momentum, and later the pressure correction — is a special case of a single **scalar transport equation**. For a conserved quantity $\phi$ per unit mass, the steady-state transport is:
 
-$$\underbrace{\nabla \cdot (\rho \mathbf{u}\, \phi)}_{\text{convection}} = \underbrace{\nabla \cdot (\Gamma \nabla \phi)}_{\text{diffusion}} + \underbrace{S_\phi}_{\text{source}}$$
+$$\underbrace{\nabla \cdot (\rho \mathbf{u}  \phi)}_{\text{convection}} = \underbrace{\nabla \cdot (\Gamma \nabla \phi)}_{\text{diffusion}} + \underbrace{S_\phi}_{\text{source}}$$
 
 In 2D component form:
 
@@ -60,7 +60,7 @@ $$\frac{\partial (\rho u u)}{\partial x} + \frac{\partial (\rho v u)}{\partial y
 
 | Term | Role |
 |---|---|
-| $\rho(u\,\partial_x u + v\,\partial_y u)$ | **Convection** — fluid carries its own momentum |
+| $\rho(u \partial_x u + v \partial_y u)$ | **Convection** — fluid carries its own momentum |
 | $-\partial_x p$ | **Pressure gradient** — pushes fluid from high to low pressure |
 | $\mu(\partial_{xx}u + \partial_{yy}u)$ | **Diffusion** — viscosity smooths out velocity gradients |
 
@@ -84,7 +84,7 @@ $$\boxed{\rho\left(u \frac{\partial v}{\partial x} + v \frac{\partial v}{\partia
 
 The relative importance of convection vs. diffusion is captured by one dimensionless parameter:
 
-$$\text{Re} = \frac{\rho\, U\, L}{\mu} = \frac{U\, L}{\nu}$$
+$$\text{Re} = \frac{\rho  U  L}{\mu} = \frac{U  L}{\nu}$$
 
 where $\nu = \mu / \rho$ is the kinematic viscosity.
 
