@@ -68,7 +68,7 @@ This asymmetry is what distinguishes Gauss–Seidel from Jacobi and accelerates 
 
 Gauss–Seidel converges if $\mathbf{A}$ is **diagonally dominant**:
 
-$$|a_P| \;\geq\; |a_E| + |a_W| + |a_N| + |a_S|$$
+$$|a_P|  \geq  |a_E| + |a_W| + |a_N| + |a_S|$$
 
 with strict inequality for at least one row. Our momentum equations satisfy this by construction:
 

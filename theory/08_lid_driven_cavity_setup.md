@@ -70,7 +70,7 @@ This is applied after each pressure-correction solve.
 
 With Neumann conditions on all boundaries, the pressure-correction equation has infinitely many solutions — any constant can be added to $p'$ without changing any gradient. To make the solution unique, we **subtract the mean**:
 
-$$p' \;\leftarrow\; p' - \overline{p'}$$
+$$p'  \leftarrow  p' - \overline{p'}$$
 
 This keeps the pressure field centred around zero. An equivalent alternative is to pin one node ($p[0,0] = 0$) and skip it in the solver.
 

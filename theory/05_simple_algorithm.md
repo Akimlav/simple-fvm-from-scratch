@@ -129,9 +129,9 @@ $$\rho u_e^{\text{corr}} \Delta y - \rho u_w^{\text{corr}} \Delta y + \rho v_n^{
 
 Substitute $u_e^{\text{corr}} = u_e^{RC} - D_f^{e}(p_E' - p_P')$ and similarly for $w$, $n$, $s$:
 
-$$\underbrace{\rho u_e^{RC} \Delta y - \rho u_w^{RC} \Delta y + \rho v_n^{RC} \Delta x - \rho v_s^{RC} \Delta x}_{= \;b_P\;\text{(mass imbalance from Step 3)}}$$
+$$\underbrace{\rho u_e^{RC} \Delta y - \rho u_w^{RC} \Delta y + \rho v_n^{RC} \Delta x - \rho v_s^{RC} \Delta x}_{=  b_P \text{(mass imbalance from Step 3)}}$$
 
-$$- \;\rho \Delta y D_f^{e} (p_E' - p_P') + \rho \Delta y D_f^{w} (p_P' - p_W') - \rho \Delta x D_f^{n} (p_N' - p_P') + \rho \Delta x D_f^{s} (p_P' - p_S') = 0$$
+$$-  \rho \Delta y D_f^{e} (p_E' - p_P') + \rho \Delta y D_f^{w} (p_P' - p_W') - \rho \Delta x D_f^{n} (p_N' - p_P') + \rho \Delta x D_f^{s} (p_P' - p_S') = 0$$
 
 ### 4g. Collect $p'$ Terms
 
@@ -159,7 +159,7 @@ This is a **Poisson-type equation** for $p'$, driven by the mass imbalance $b_P$
 
 ## Step 5: Pressure Correction
 
-$$p \;\leftarrow\; p + \alpha_p \cdot p'$$
+$$p  \leftarrow  p + \alpha_p \cdot p'$$
 
 The under-relaxation factor $\alpha_p$ (typically 0.1–0.3) prevents overshooting. We also **subtract the mean** of $p'$ before applying it, to fix the pressure reference level (Chapter 8 explains why).
 
