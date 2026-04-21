@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Simulation output (regenerate with: python run_simulation.py)
+results/*.npy
+results/sweep/
+# Keep PNGs — they are shown in the README
+!results/*.png
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# venv (if ever used)
+venv/
+.env/

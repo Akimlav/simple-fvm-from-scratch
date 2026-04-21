@@ -17,7 +17,8 @@ This repository implements a **lid-driven cavity** flow solver using:
 | Convection scheme | Upwind differencing |
 | Diffusion | Central differencing |
 | Linear solver | Gauss–Seidel iteration |
-| Dependencies | `numpy` only |
+| Language | Python 3.8+ |
+| Dependencies | `numpy`, `matplotlib` |
 
 Every equation in the `theory/` notes has a direct, named counterpart in the `solver/` code. If you see `a_P u_P = a_E u_E + ...` in a markdown file, you will find `aP`, `aE`, etc. in the corresponding Python file.
 
@@ -65,38 +66,48 @@ On a collocated grid (u, v, p all at the same locations), naive interpolation of
 
 ---
 
+## What This Is NOT
+
+This is a **teaching solver**, not a production CFD code. Limitations you should know about:
+
+- **Pure Python loops** — slow on grids larger than ~80x80. No vectorisation or compiled extensions.
+- **2D only** — no 3D support.
+- **Steady, incompressible, laminar** — no transient terms, no compressibility, no turbulence models.
+- **Uniform Cartesian grid** — no unstructured meshes, no local refinement.
+- **First-order upwind** — significant numerical diffusion at moderate Reynolds numbers.
+
+For production CFD, see [OpenFOAM](https://www.openfoam.com/), [SU2](https://su2code.github.io/), or [code_saturne](https://www.code-saturne.org/).
+
+---
+
 ## Repository Layout
 
 ```
 simple-fvm-from-scratch/
 │
-├── README.md                  ← you are here
+├── README.md                  <- you are here
+├── LICENSE                    <- MIT license
 ├── requirements.txt
-├── run_simulation.py          ← entry point: runs SIMPLE, saves results
+├── run_simulation.py          <- entry point: runs SIMPLE, saves results
 │
-├── theory/                    ← step-by-step derivations
-│   ├── 01_what_problem_are_we_solving.md
-│   ├── 02_finite_volume_discretization.md
-│   ├── 03_momentum_equations.md
-│   ├── 04_pressure_velocity_coupling.md
-│   ├── 05_simple_algorithm.md
-│   ├── 06_gauss_seidel_solver.md
-│   ├── 07_rhie_chow_interpolation.md
-│   └── 08_lid_driven_cavity_setup.md
+├── theory/                    <- step-by-step derivations (01–08)
 │
-├── solver/                    ← one file per concept
-│   ├── grid.py                ← mesh geometry
-│   ├── fields.py              ← field initialisation
-│   ├── discretization.py      ← FVM coefficient assembly
-│   ├── linear_solvers.py      ← Gauss–Seidel (used by momentum.py and pressure.py)
-│   ├── momentum.py            ← u* and v* prediction
-│   ├── pressure.py            ← pressure-correction equation
-│   ├── rhie_chow.py           ← face velocity interpolation
-│   ├── simple.py              ← outer SIMPLE loop
-│   └── boundary_conditions.py ← all BCs in one place
+├── solver/                    <- one file per concept
+│   ├── grid.py                <- mesh geometry
+│   ├── fields.py              <- field initialisation
+│   ├── discretization.py      <- FVM coefficient assembly
+│   ├── linear_solvers.py      <- Gauss-Seidel
+│   ├── momentum.py            <- u* and v* prediction
+│   ├── pressure.py            <- pressure-correction equation
+│   ├── rhie_chow.py           <- face velocity interpolation
+│   ├── simple.py              <- outer SIMPLE loop
+│   └── boundary_conditions.py <- all BCs in one place
 │
-└── post/
-    └── plot_results.py        ← matplotlib visualisation + Ghia comparison
+├── data/                      <- Ghia et al. (1982) benchmark tables
+├── tests/                     <- regression tests
+├── post/
+│   └── plot_results.py        <- visualisation + Ghia comparison
+└── results/                   <- generated plots (*.png)
 ```
 
 ---
@@ -104,16 +115,17 @@ simple-fvm-from-scratch/
 ## How to Run
 
 ```bash
-pip install numpy matplotlib
+pip install -r requirements.txt
 python run_simulation.py
 ```
 
-Results are saved to `results/` as numpy `.npy` files and four plots are displayed:
+Results are saved to `results/` as `.png` plots:
 
 1. Pressure contour + velocity quiver
 2. Streamlines
 3. Centreline u-velocity vs Ghia et al. (1982) benchmark
 4. Centreline v-velocity vs Ghia et al. (1982) benchmark
+5. Convergence history
 
 ---
 
@@ -147,15 +159,27 @@ the centreline profiles match Ghia et al. within a few percent.
 
 ---
 
+## Results (Re = 100, 41x41 grid)
+
+![Pressure and velocity](results/pressure_velocity.png)
+
+![Streamlines](results/streamlines.png)
+
+![u-velocity centreline vs Ghia](results/u_centreline.png)
+
+![v-velocity centreline vs Ghia](results/v_centreline.png)
+
+![Convergence history](results/convergence.png)
+
+---
+
 ## Validation: Ghia et al. (1982)
 
 The standard benchmark for this problem is:
 
-> Ghia, U., Ghia, K.N., & Shin, C.T. (1982). High-Re solutions for incompressible flow using the Navier-Stokes equations and a multigrid method. *Journal of Computational Physics*, **48**(3), 387–411.
+> Ghia, U., Ghia, K.N., & Shin, C.T. (1982). High-Re solutions for incompressible flow using the Navier-Stokes equations and a multigrid method. *Journal of Computational Physics*, **48**(3), 387-411.
 
-They solved the lid-driven cavity at Re = 100, 400, 1000, 3200, 5000, 7500, 10000 on a 129×129 grid using a vorticity–streamfunction multigrid solver. Their tabulated centreline velocities are the accepted reference values.
-
-At Re = 100, the primary vortex centre is near (0.617, 0.737). Our solver should reproduce this vortex clearly and match the u-velocity profile along x = 0.5 to within 2–5% on a 41×41 grid.
+The full benchmark tables (Re = 100 through 10,000) are included in `data/`. At Re = 100, the primary vortex centre is near (0.617, 0.737). Our solver reproduces this vortex clearly and matches the centreline velocity profiles on a 41x41 grid.
 
 ---
 
@@ -165,8 +189,7 @@ In `run_simulation.py`, change the kinematic viscosity:
 
 ```python
 nu = 1e-2    # Re = 100  (default, converges easily)
-nu = 2.5e-3  # Re = 400  (increase iterations to ~2000)
-nu = 1e-3    # Re = 1000 (needs finer grid, ~61x61)
+nu = 2.5e-3  # Re = 400  (increase iterations to ~2000, use 61x61 grid)
 ```
 
 ---
@@ -192,4 +215,10 @@ the code — every step references the theory files.
 - Patankar, S.V. (1980). *Numerical Heat Transfer and Fluid Flow*. Hemisphere Publishing.
 - Ferziger, J.H. & Perić, M. (2002). *Computational Methods for Fluid Dynamics*. Springer.
 - Rhie, C.M. & Chow, W.L. (1983). Numerical study of the turbulent flow past an airfoil with trailing edge separation. *AIAA Journal*, 21(11), 1525–1532.
-- Ghia, U., Ghia, K.N., & Shin, C.T. (1982). High-Re solutions for incompressible flow using the Navier-Stokes equations and a multigrid method. *Journal of Computational Physics*, 48(3), 387–411.
+- Ghia, U., Ghia, K.N., & Shin, C.T. (1982). High-Re solutions for incompressible flow using the Navier-Stokes equations and a multigrid method. *Journal of Computational Physics*, 48(3), 387-411.
+
+---
+
+## License
+
+MIT. See [LICENSE](LICENSE).
