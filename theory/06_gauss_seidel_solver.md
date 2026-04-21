@@ -4,11 +4,11 @@
 
 After discretisation, every interior cell $(i,j)$ contributes one equation:
 
-$$a_P\,\phi_P = a_E\,\phi_E + a_W\,\phi_W + a_N\,\phi_N + a_S\,\phi_S + b$$
+$$a_P \phi_P = a_E \phi_E + a_W \phi_W + a_N \phi_N + a_S \phi_S + b$$
 
 For an $N \times N$ grid, this is a system of $(N-2)^2$ equations (interior nodes only). Writing it in matrix form:
 
-$$\mathbf{A}\,\boldsymbol{\phi} = \mathbf{b}$$
+$$\mathbf{A} \boldsymbol{\phi} = \mathbf{b}$$
 
 where $\mathbf{A}$ is a sparse banded matrix. For a 41×41 grid, $\mathbf{A}$ is $1521 \times 1521$ — storing it explicitly as a dense matrix is wasteful since each row has at most 5 non-zero entries. A direct solver like Gaussian elimination would work but is overkill for this structure.
 
@@ -24,7 +24,7 @@ Instead of solving the full system simultaneously, **visit each cell one at a ti
 
 Rearrange the FVM equation to isolate $\phi_P$:
 
-$$\phi_P = \frac{a_E\,\phi_E + a_W\,\phi_W + a_N\,\phi_N + a_S\,\phi_S + b}{a_P}$$
+$$\phi_P = \frac{a_E \phi_E + a_W \phi_W + a_N \phi_N + a_S \phi_S + b}{a_P}$$
 
 Apply this update in-place as we sweep through the grid.
 
@@ -33,7 +33,7 @@ Apply this update in-place as we sweep through the grid.
 Decompose $\mathbf{A} = \mathbf{D} + \mathbf{L} + \mathbf{U}$ where $\mathbf{D}$ is diagonal, $\mathbf{L}$ is strictly lower triangular, and $\mathbf{U}$ is strictly upper triangular:
 
 - **Jacobi** iteration: $\boldsymbol{\phi}^{(k+1)} = \mathbf{D}^{-1}(\mathbf{b} - (\mathbf{L} + \mathbf{U})\boldsymbol{\phi}^{(k)})$ — uses only old values
-- **Gauss–Seidel**: $\boldsymbol{\phi}^{(k+1)} = (\mathbf{D} + \mathbf{L})^{-1}(\mathbf{b} - \mathbf{U}\,\boldsymbol{\phi}^{(k)})$ — uses already-updated values from earlier in the sweep
+- **Gauss–Seidel**: $\boldsymbol{\phi}^{(k+1)} = (\mathbf{D} + \mathbf{L})^{-1}(\mathbf{b} - \mathbf{U} \boldsymbol{\phi}^{(k)})$ — uses already-updated values from earlier in the sweep
 
 The difference is that Gauss–Seidel **immediately uses** any value it has already updated in the current sweep. This propagates information faster and roughly **doubles the convergence rate** compared to Jacobi.
 
@@ -68,11 +68,11 @@ This asymmetry is what distinguishes Gauss–Seidel from Jacobi and accelerates 
 
 Gauss–Seidel converges if $\mathbf{A}$ is **diagonally dominant**:
 
-$$|a_P| \;\geq\; |a_E| + |a_W| + |a_N| + |a_S|$$
+$$|a_P|  \geq  |a_E| + |a_W| + |a_N| + |a_S|$$
 
 with strict inequality for at least one row. Our momentum equations satisfy this by construction:
 
-$$a_P = a_E + a_W + a_N + a_S + \underbrace{(F_e - F_w + F_n - F_s)}_{\geq\, 0}$$
+$$a_P = a_E + a_W + a_N + a_S + \underbrace{(F_e - F_w + F_n - F_s)}_{\geq  0}$$
 
 The net outflow term is non-negative during iteration, ensuring $a_P \geq \sum a_{nb}$.
 
@@ -110,7 +110,7 @@ The pressure correction needs more sweeps because its accuracy directly controls
 
 ### Why the Same Function Works for Both
 
-Both the momentum equation and the pressure-correction equation have the **identical algebraic structure**: $a_P\,\phi_P = \sum a_{nb}\,\phi_{nb} + b$. Only the coefficient values differ. The solver does not need to know which equation it is solving.
+Both the momentum equation and the pressure-correction equation have the **identical algebraic structure**: $a_P \phi_P = \sum a_{nb} \phi_{nb} + b$. Only the coefficient values differ. The solver does not need to know which equation it is solving.
 
 ---
 

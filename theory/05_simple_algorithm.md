@@ -43,7 +43,7 @@ $u^*$ and $v^*$ are called **predicted** velocities — they satisfy momentum bu
 
 Solve the momentum equations from Chapter 3 with the **current** (possibly wrong) pressure field:
 
-$$a_P^u\,u_P^* = \sum a_{nb}^u\,u_{nb}^* + b^u(p)$$
+$$a_P^u u_P^* = \sum a_{nb}^u u_{nb}^* + b^u(p)$$
 
 This gives predicted velocities $u^*$, $v^*$ that satisfy momentum but generally violate continuity. We store the **unrelaxed** central coefficient $a_P^{u,0}$ (before under-relaxation) in `au_P_arr` — it will be needed in every subsequent step.
 
@@ -53,7 +53,7 @@ This gives predicted velocities $u^*$, $v^*$ that satisfy momentum but generally
 
 Using Rhie–Chow face velocities (Chapter 7), compute the mass flux through each face of every cell and measure the continuity residual:
 
-$$b_P = \rho\,u_e\,\Delta y - \rho\,u_w\,\Delta y + \rho\,v_n\,\Delta x - \rho\,v_s\,\Delta x$$
+$$b_P = \rho u_e \Delta y - \rho u_w \Delta y + \rho v_n \Delta x - \rho v_s \Delta x$$
 
 This is the **net mass outflow** from cell $(i,j)$. At convergence $b_P \to 0$ everywhere.
 
@@ -75,21 +75,21 @@ where $p^*$ is the current pressure guess and $u^*$, $v^*$ are the momentum pred
 
 The momentum equation for the **true** velocity:
 
-$$a_P\,u_P = \sum a_{nb}\,u_{nb} + b - \frac{\Delta y}{2}(p_E - p_W)$$
+$$a_P u_P = \sum a_{nb} u_{nb} + b - \frac{\Delta y}{2}(p_E - p_W)$$
 
 The momentum equation for the **predicted** velocity (same coefficients, same old pressure $p^*$):
 
-$$a_P\,u_P^* = \sum a_{nb}\,u_{nb}^* + b - \frac{\Delta y}{2}(p_E^* - p_W^*)$$
+$$a_P u_P^* = \sum a_{nb} u_{nb}^* + b - \frac{\Delta y}{2}(p_E^* - p_W^*)$$
 
 Subtract:
 
-$$a_P\,u_P' = \sum a_{nb}\,u_{nb}' - \frac{\Delta y}{2}(p_E' - p_W')$$
+$$a_P u_P' = \sum a_{nb} u_{nb}' - \frac{\Delta y}{2}(p_E' - p_W')$$
 
 ### 4c. The SIMPLE Approximation
 
-The term $\sum a_{nb}\,u_{nb}'$ contains the velocity corrections at all neighbouring cells. SIMPLE **drops this term**, assuming that neighbour corrections are small:
+The term $\sum a_{nb} u_{nb}'$ contains the velocity corrections at all neighbouring cells. SIMPLE **drops this term**, assuming that neighbour corrections are small:
 
-$$a_P\,u_P' \approx -\frac{\Delta y}{2}(p_E' - p_W')$$
+$$a_P u_P' \approx -\frac{\Delta y}{2}(p_E' - p_W')$$
 
 This is what makes SIMPLE "semi-implicit" — the neighbour coupling is neglected in the correction step. The approximation is recovered through outer iterations.
 
@@ -99,9 +99,9 @@ This is what makes SIMPLE "semi-implicit" — the neighbour coupling is neglecte
 
 For the velocity correction applied at the cell centre, SIMPLE uses the **compact** pressure gradient (adjacent cells, not the wide stencil):
 
-$$\boxed{u_P' = -\frac{\Delta y}{a_P^{u,0}}\,(p_E' - p_P')}$$
+$$\boxed{u_P' = -\frac{\Delta y}{a_P^{u,0}} (p_E' - p_P')}$$
 
-$$\boxed{v_P' = -\frac{\Delta x}{a_P^{v,0}}\,(p_N' - p_P')}$$
+$$\boxed{v_P' = -\frac{\Delta x}{a_P^{v,0}} (p_N' - p_P')}$$
 
 where $a_P^{u,0}$ is the **unrelaxed** momentum central coefficient. The compact gradient is used (rather than the wide stencil from momentum) for **consistency with the Rhie–Chow face velocity** — this consistency is critical for convergence.
 
@@ -113,11 +113,11 @@ $$d_P^u = \frac{\Delta y}{a_P^{u,0}} \qquad d_P^v = \frac{\Delta x}{a_P^{v,0}}$$
 
 The Rhie–Chow face velocity (Chapter 7) after the pressure correction becomes:
 
-$$u_e^{\text{corrected}} = u_e^{RC} - D_f^{e}\,(p_E' - p_P')$$
+$$u_e^{\text{corrected}} = u_e^{RC} - D_f^{e} (p_E' - p_P')$$
 
 where the face coupling coefficient is:
 
-$$D_f^{e} = \tfrac{1}{2}\,\Delta y\left(\frac{1}{a_P^{P}} + \frac{1}{a_P^{E}}\right)$$
+$$D_f^{e} = \tfrac{1}{2} \Delta y\left(\frac{1}{a_P^{P}} + \frac{1}{a_P^{E}}\right)$$
 
 Similarly for all four faces (using $a_P$ from the appropriate momentum equation).
 
@@ -125,31 +125,31 @@ Similarly for all four faces (using $a_P$ from the appropriate momentum equation
 
 The corrected velocity field must satisfy continuity:
 
-$$\rho\,u_e^{\text{corr}}\,\Delta y - \rho\,u_w^{\text{corr}}\,\Delta y + \rho\,v_n^{\text{corr}}\,\Delta x - \rho\,v_s^{\text{corr}}\,\Delta x = 0$$
+$$\rho u_e^{\text{corr}} \Delta y - \rho u_w^{\text{corr}} \Delta y + \rho v_n^{\text{corr}} \Delta x - \rho v_s^{\text{corr}} \Delta x = 0$$
 
 Substitute $u_e^{\text{corr}} = u_e^{RC} - D_f^{e}(p_E' - p_P')$ and similarly for $w$, $n$, $s$:
 
-$$\underbrace{\rho\,u_e^{RC}\,\Delta y - \rho\,u_w^{RC}\,\Delta y + \rho\,v_n^{RC}\,\Delta x - \rho\,v_s^{RC}\,\Delta x}_{= \;b_P\;\text{(mass imbalance from Step 3)}}$$
+$$\underbrace{\rho u_e^{RC} \Delta y - \rho u_w^{RC} \Delta y + \rho v_n^{RC} \Delta x - \rho v_s^{RC} \Delta x}_{=  b_P \text{(mass imbalance from Step 3)}}$$
 
-$$- \;\rho\,\Delta y\,D_f^{e}\,(p_E' - p_P') + \rho\,\Delta y\,D_f^{w}\,(p_P' - p_W') - \rho\,\Delta x\,D_f^{n}\,(p_N' - p_P') + \rho\,\Delta x\,D_f^{s}\,(p_P' - p_S') = 0$$
+$$-  \rho \Delta y D_f^{e} (p_E' - p_P') + \rho \Delta y D_f^{w} (p_P' - p_W') - \rho \Delta x D_f^{n} (p_N' - p_P') + \rho \Delta x D_f^{s} (p_P' - p_S') = 0$$
 
 ### 4g. Collect $p'$ Terms
 
 Define the pressure-correction coefficients:
 
-$$a_E' = \rho\,\Delta y\,D_f^{e} = \tfrac{1}{2}\,\rho\,\Delta y^2 \left(\frac{1}{a_P^{P}} + \frac{1}{a_P^{E}}\right)$$
+$$a_E' = \rho \Delta y D_f^{e} = \tfrac{1}{2} \rho \Delta y^2 \left(\frac{1}{a_P^{P}} + \frac{1}{a_P^{E}}\right)$$
 
-$$a_W' = \rho\,\Delta y\,D_f^{w} = \tfrac{1}{2}\,\rho\,\Delta y^2 \left(\frac{1}{a_P^{W}} + \frac{1}{a_P^{P}}\right)$$
+$$a_W' = \rho \Delta y D_f^{w} = \tfrac{1}{2} \rho \Delta y^2 \left(\frac{1}{a_P^{W}} + \frac{1}{a_P^{P}}\right)$$
 
-$$a_N' = \rho\,\Delta x\,D_f^{n} = \tfrac{1}{2}\,\rho\,\Delta x^2 \left(\frac{1}{a_P^{P}} + \frac{1}{a_P^{N}}\right)$$
+$$a_N' = \rho \Delta x D_f^{n} = \tfrac{1}{2} \rho \Delta x^2 \left(\frac{1}{a_P^{P}} + \frac{1}{a_P^{N}}\right)$$
 
-$$a_S' = \rho\,\Delta x\,D_f^{s} = \tfrac{1}{2}\,\rho\,\Delta x^2 \left(\frac{1}{a_P^{S}} + \frac{1}{a_P^{P}}\right)$$
+$$a_S' = \rho \Delta x D_f^{s} = \tfrac{1}{2} \rho \Delta x^2 \left(\frac{1}{a_P^{S}} + \frac{1}{a_P^{P}}\right)$$
 
 $$a_P' = a_E' + a_W' + a_N' + a_S'$$
 
 The **pressure-correction equation**:
 
-$$\boxed{a_P'\,p_P' = a_E'\,p_E' + a_W'\,p_W' + a_N'\,p_N' + a_S'\,p_S' - b_P}$$
+$$\boxed{a_P' p_P' = a_E' p_E' + a_W' p_W' + a_N' p_N' + a_S' p_S' - b_P}$$
 
 This is a **Poisson-type equation** for $p'$, driven by the mass imbalance $b_P$. Where $b_P$ is large (big continuity violation), $p'$ is large (big pressure correction needed). It is solved by Gauss–Seidel (Chapter 6).
 
@@ -159,7 +159,7 @@ This is a **Poisson-type equation** for $p'$, driven by the mass imbalance $b_P$
 
 ## Step 5: Pressure Correction
 
-$$p \;\leftarrow\; p + \alpha_p \cdot p'$$
+$$p  \leftarrow  p + \alpha_p \cdot p'$$
 
 The under-relaxation factor $\alpha_p$ (typically 0.1–0.3) prevents overshooting. We also **subtract the mean** of $p'$ before applying it, to fix the pressure reference level (Chapter 8 explains why).
 
@@ -167,9 +167,9 @@ The under-relaxation factor $\alpha_p$ (typically 0.1–0.3) prevents overshooti
 
 ## Step 6: Velocity Correction
 
-$$u_{i,j} = u_{i,j}^* - \frac{\Delta y}{a_P^{u,0}[i,j]}\,(p'_{i+1,j} - p'_{i,j})$$
+$$u_{i,j} = u_{i,j}^* - \frac{\Delta y}{a_P^{u,0}[i,j]} (p'_{i+1,j} - p'_{i,j})$$
 
-$$v_{i,j} = v_{i,j}^* - \frac{\Delta x}{a_P^{v,0}[i,j]}\,(p'_{i,j+1} - p'_{i,j})$$
+$$v_{i,j} = v_{i,j}^* - \frac{\Delta x}{a_P^{v,0}[i,j]} (p'_{i,j+1} - p'_{i,j})$$
 
 Note: these use the **compact gradient** (adjacent cells $p'_E - p'_P$), consistent with the Rhie–Chow face velocity. Using the wide stencil here would break the consistency and prevent convergence.
 

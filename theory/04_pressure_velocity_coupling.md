@@ -31,7 +31,7 @@ On our collocated grid, $u$, $v$, and $p$ are all stored at the same node locati
 
 The pressure gradient in the $x$-momentum equation uses a **central difference** over two grid spacings:
 
-$$\frac{\partial p}{\partial x}\bigg|_P \approx \frac{p_{i+1,j} - p_{i-1,j}}{2\,\Delta x}$$
+$$\frac{\partial p}{\partial x}\bigg|_P \approx \frac{p_{i+1,j} - p_{i-1,j}}{2 \Delta x}$$
 
 Cell $P = (i,j)$ couples to cells $(i+1,j)$ and $(i-1,j)$, **skipping** cell $(i,j)$ itself. Now consider a pressure field that alternates:
 
@@ -42,7 +42,7 @@ p:       100     0   100     0   100
 
 At node 2:
 
-$$\frac{\partial p}{\partial x}\bigg|_2 \approx \frac{p_3 - p_1}{2\,\Delta x} = \frac{0 - 0}{2\,\Delta x} = 0$$
+$$\frac{\partial p}{\partial x}\bigg|_2 \approx \frac{p_3 - p_1}{2 \Delta x} = \frac{0 - 0}{2 \Delta x} = 0$$
 
 The momentum equation sees **zero pressure gradient** even though the pressure is oscillating wildly. The checkerboard pattern is **invisible** to the discrete momentum operator.
 
@@ -54,7 +54,7 @@ $$u_e = \tfrac{1}{2}(u_P + u_E)$$
 
 then the discrete continuity $\frac{u_e - u_w}{\Delta x} + \frac{v_n - v_s}{\Delta y} = 0$ becomes:
 
-$$\frac{u_{i+1,j} - u_{i-1,j}}{2\,\Delta x} + \frac{v_{i,j+1} - v_{i,j-1}}{2\,\Delta y} = 0$$
+$$\frac{u_{i+1,j} - u_{i-1,j}}{2 \Delta x} + \frac{v_{i,j+1} - v_{i,j-1}}{2 \Delta y} = 0$$
 
 Again a **wide stencil** that couples only alternating cells. A checkerboard velocity field would satisfy discrete continuity exactly.
 
@@ -88,7 +88,7 @@ We keep everything at cell centres (**simpler code**, easier to extend to unstru
 
 When computing face velocities for the continuity equation, we do **not** use naive interpolation $u_e = \frac{1}{2}(u_P + u_E)$. Instead, we add a pressure-smoothing correction:
 
-$$u_e = \tfrac{1}{2}(u_P^{\ast} + u_E^{\ast}) - D_f\,(p_E - p_P)$$
+$$u_e = \tfrac{1}{2}(u_P^{\ast} + u_E^{\ast}) - D_f (p_E - p_P)$$
 
 The key term is $(p_E - p_P)$: a **compact** pressure gradient that couples **adjacent** cells. If a checkerboard is present, $(p_E - p_P)$ is large, the face velocity is modified, the continuity residual becomes large, and the pressure correction eliminates the oscillation.
 

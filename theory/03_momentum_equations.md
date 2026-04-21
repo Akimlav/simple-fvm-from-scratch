@@ -34,7 +34,7 @@ $$F_e \phi_e = \max(F_e, 0)\;\phi_P - \max(-F_e, 0) \phi_E$$
 
 Applying the same logic to all four faces:
 
-| Face | $F_f\,\phi_f$ |
+| Face | $F_f \phi_f$ |
 |---|---|
 | East | $\max(F_e, 0) \phi_P - \max(-F_e, 0) \phi_E$ |
 | West | $\max(F_w, 0) \phi_W - \max(-F_w, 0) \phi_P$ |
@@ -110,7 +110,7 @@ $$\frac{\partial p}{\partial x}\bigg|_P \approx \frac{p_E - p_W}{2 \Delta x} = \
 
 Substituting:
 
-$$b_{\text{pressure}} = -\frac{p_{i+1,j} - p_{i-1,j}}{2\,\Delta x} \cdot \Delta x \Delta y = -\frac{\Delta y}{2}\,(p_{i+1,j} - p_{i-1,j})$$
+$$b_{\text{pressure}} = -\frac{p_{i+1,j} - p_{i-1,j}}{2 \Delta x} \cdot \Delta x \Delta y = -\frac{\Delta y}{2} (p_{i+1,j} - p_{i-1,j})$$
 
 > **Note:** this wide-stencil gradient $(p_{i+1} - p_{i-1})$ skips the immediate neighbour — it is one source of the **checkerboard instability** (Chapter 4). Rhie–Chow interpolation (Chapter 7) repairs continuity without changing the momentum equation itself.
 
@@ -128,11 +128,11 @@ where $\alpha_u \in (0, 1)$ is the under-relaxation factor ($\alpha_u = 1$ means
 
 ### Equivalent Modified Equation
 
-Under-relaxation can be built directly into the coefficients. Starting from $a_P\,u_P^{\text{direct}} = \sum a_{nb}\,u_{nb} + b$ and substituting the relaxation formula:
+Under-relaxation can be built directly into the coefficients. Starting from $a_P u_P^{\text{direct}} = \sum a_{nb} u_{nb} + b$ and substituting the relaxation formula:
 
 $$\frac{a_P}{\alpha_u} u_P = \sum a_{nb} u_{nb} + b + \frac{1 - \alpha_u}{\alpha_u} a_P u_P^{\text{old}}$$
 
-The modified central coefficient is $a_P / \alpha_u$ (larger → more diagonally dominant → more stable), and an extra source $\frac{1-\alpha_u}{\alpha_u}\,a_P\,u_P^{\text{old}}$ anchors the solution to the previous iterate.
+The modified central coefficient is $a_P / \alpha_u$ (larger → more diagonally dominant → more stable), and an extra source $\frac{1-\alpha_u}{\alpha_u} a_P u_P^{\text{old}}$ anchors the solution to the previous iterate.
 
 ---
 

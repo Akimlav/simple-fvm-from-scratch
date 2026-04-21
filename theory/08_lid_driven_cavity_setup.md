@@ -14,9 +14,9 @@ $$\Delta x = \Delta y = \frac{L}{N - 1} = \frac{1}{N - 1}$$
 
 Node coordinates (boundary nodes included):
 
-$$x_i = i\,\Delta x \quad \text{for } i = 0, \ldots, N-1$$
+$$x_i = i \Delta x \quad \text{for } i = 0, \ldots, N-1$$
 
-$$y_j = j\,\Delta y \quad \text{for } j = 0, \ldots, N-1$$
+$$y_j = j \Delta y \quad \text{for } j = 0, \ldots, N-1$$
 
 Nodes $i = 0$ and $i = N-1$ lie on the physical walls. The interior nodes where equations are solved run $i = 1, \ldots, N-2$.
 
@@ -49,7 +49,7 @@ Gauss–Seidel updates interior nodes using neighbour values. Interior nodes adj
 
 ## Pressure Boundary Conditions (Neumann)
 
-At solid walls the flow is impermeable: no velocity correction normal to the wall. From the velocity correction $u' = -(d_u)\,(p'_E - p'_P)$, setting $u' = 0$ at a wall requires:
+At solid walls the flow is impermeable: no velocity correction normal to the wall. From the velocity correction $u' = -(d_u) (p'_E - p'_P)$, setting $u' = 0$ at a wall requires:
 
 $$\frac{\partial p'}{\partial n}\bigg|_{\text{wall}} = 0$$
 
@@ -70,7 +70,7 @@ This is applied after each pressure-correction solve.
 
 With Neumann conditions on all boundaries, the pressure-correction equation has infinitely many solutions — any constant can be added to $p'$ without changing any gradient. To make the solution unique, we **subtract the mean**:
 
-$$p' \;\leftarrow\; p' - \overline{p'}$$
+$$p'  \leftarrow  p' - \overline{p'}$$
 
 This keeps the pressure field centred around zero. An equivalent alternative is to pin one node ($p[0,0] = 0$) and skip it in the solver.
 
@@ -114,7 +114,7 @@ $$\text{Re} = \frac{U_{\text{lid}} \cdot L}{\nu} = \frac{1}{\nu}$$
 
 We monitor the maximum absolute mass imbalance:
 
-$$\text{residual} = \max_{i,j}\,|b_P[i,j]|$$
+$$\text{residual} = \max_{i,j} |b_P[i,j]|$$
 
 Convergence is declared when $\text{residual} < 10^{-5}$. Typical behaviour:
 - First ~10 iterations: residual may be non-monotonic as the pressure field develops from zero
