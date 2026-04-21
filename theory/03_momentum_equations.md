@@ -26,11 +26,11 @@ $$\phi_e = \begin{cases} \phi_P & \text{if } F_e > 0 \quad\text{(flow goes P →
 
 This conditional can be written without branching:
 
-$$F_e \phi_e = \max(F_e, 0)\;\phi_P \;+\; \min(F_e, 0)\;\phi_E$$
+$$F_e \phi_e = \max(F_e, 0) \phi_P + \min(F_e, 0) \phi_E$$
 
 Equivalently (using $\min(F_e, 0) = -\max(-F_e, 0)$):
 
-$$F_e \phi_e = \max(F_e, 0)\;\phi_P - \max(-F_e, 0)\;\phi_E$$
+$$F_e \phi_e = \max(F_e, 0)\;\phi_P - \max(-F_e, 0) \phi_E$$
 
 Applying the same logic to all four faces:
 
@@ -51,20 +51,20 @@ Substitute the upwind expressions into the integrated equation and **collect ter
 
 **Coefficient of $\phi_E$** (from convection + diffusion through the east face):
 
-$$a_E = D_e + \max(-F_e,\; 0)$$
+$$a_E = D_e + \max(-F_e, 0)$$
 
 - $D_e$: diffusion always couples $P$ and $E$
 - $\max(-F_e, 0)$: convection only couples $E$ to $P$ when flow goes $E \to P$ (i.e. $F_e < 0$)
 
 By identical reasoning for the other faces:
 
-$$\boxed{a_E = D_e + \max(-F_e,\; 0)}$$
+$$\boxed{a_E = D_e + \max(-F_e, 0)}$$
 
-$$\boxed{a_W = D_w + \max(F_w,\; 0)}$$
+$$\boxed{a_W = D_w + \max(F_w, 0)}$$
 
-$$\boxed{a_N = D_n + \max(-F_n,\; 0)}$$
+$$\boxed{a_N = D_n + \max(-F_n, 0)}$$
 
-$$\boxed{a_S = D_s + \max(F_s,\; 0)}$$
+$$\boxed{a_S = D_s + \max(F_s, 0)}$$
 
 ### Deriving the Central Coefficient
 

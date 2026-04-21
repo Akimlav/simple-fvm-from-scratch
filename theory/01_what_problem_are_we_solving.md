@@ -108,12 +108,12 @@ Three unknowns ($u$, $v$, $p$) and three equations — seems straightforward. Th
 
 **The coupling problem:** pressure appears as a source in both momentum equations, but there is **no independent equation for pressure**. Continuity constrains the velocity field ($\nabla \cdot \mathbf{u} = 0$) but says nothing directly about $p$.
 
-For compressible flow an equation of state ($\rho = \rho(p)$) closes the system. For incompressible flow that link is severed: $\rho$ is constant regardless of $p$. Pressure becomes a **Lagrange multiplier** — the field that, whatever its value, enforces the divergence-free constraint.
+For compressible flow an equation of state rho = rho(p) closes the system. For incompressible flow that link is severed: $\rho$ is constant regardless of $p$. Pressure becomes a **Lagrange multiplier** — the field that, whatever its value, enforces the divergence-free constraint.
 
 This is the **pressure–velocity coupling problem**. The SIMPLE algorithm (Chapter 5) resolves it iteratively:
 
 1. **Guess** a pressure field $p$
-2. **Solve** momentum → approximate velocities $u^*$, $v^*$ (violate continuity)
+2. **Solve** momentum → approximate velocities u*, v* (violate continuity)
 3. **Derive** a pressure correction $p'$ from the continuity constraint
 4. **Correct** $p$ and velocities
 5. **Repeat** until continuity is satisfied within a tolerance
