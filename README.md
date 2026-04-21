@@ -44,7 +44,7 @@ This is a **teaching solver**, not a production CFD code. Limitations you should
 - **Uniform Cartesian grid** — no unstructured meshes, no local refinement.
 - **First-order upwind** — significant numerical diffusion at moderate Reynolds numbers.
 
-For production CFD, see [OpenFOAM](https://www.openfoam.com/), [SU2](https://su2code.github.io/), or [code_saturne](https://www.code-saturne.org/).
+For production CFD, see [OpenFOAM](https://www.openfoam.com/)).
 
 ---
 
